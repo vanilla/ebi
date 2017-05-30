@@ -1,0 +1,18 @@
+overview: Specific HTML utilities
+tests:
+  - name: css class
+    template: >
+      <p Class="{this}">a</p>
+    expected: '<p class="a c">a</p>'
+    tests:
+      - name: with object
+        data: { a: true, 'is-b': false, c: 123 }
+      - name: with array
+        data: ['a', 'c']
+      - name: with string
+        data: 'a c'
+  - name: comments
+    template: |
+      <!-- Do something. -->
+      <p>wut!?</p>
+    expected: '<p>wut!?</p>'

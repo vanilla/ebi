@@ -1,0 +1,35 @@
+{
+	"name": "vanilla/ebi",
+	"description": "A lightweight template engine.",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Todd Burry",
+			"email": "todd@vanillaforums.com"
+		}
+	],
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/vanilla/expression-language"
+		}
+	],
+	"require": {
+		"php": ">=5.6.0",
+		"symfony/expression-language": "^103.2"
+	},
+	"autoload": {
+		"psr-4": {
+			"Ebi\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Ebi\\Tests\\": "tests"
+		}
+	},
+	"require-dev": {
+		"symfony/yaml": "^3.2",
+		"bobthecow/faker": "dev-master"
+	}
+}
