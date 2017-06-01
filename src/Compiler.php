@@ -17,6 +17,8 @@ class Compiler {
     const T_LITERAL = 'bi-literal';
     const T_AS = 'bi-as';
     const T_COMPONENT = 'bi-component';
+    const T_CHILD = 'bi-child';
+    const T_BLOCK = 'bi-block';
     const T_ELSE = 'bi-else';
     const T_EMPTY = 'bi-empty';
 
@@ -40,7 +42,7 @@ class Compiler {
     }
 
     public function compile($src, array $options = []) {
-        $options += ['basename' => ''];
+        $options += ['basename' => '', 'runtime' => true];
 
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
@@ -54,35 +56,42 @@ class Compiler {
         $dom->loadHTML($src, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOCDATA | LIBXML_NOXMLDECL);
         $arr = $this->domToArray($dom);
 
-        $output = new CompilerComponentBuffer();
+        $out = new CompilerBuffer();
 
-        $output->appendCode("function (\$props) {\n");
-        $output->pushScope(['this' => 'props']);
-        $output->indent(+1);
+        $out->setBasename($options['basename'])
+            ->setStyle($options['runtime'] ? CompilerBuffer::STYLE_REGISTER : CompilerBuffer::STYLE_FUNCTION);
+
+        $out->pushScope(['this' => 'props']);
+        $out->indent(+1);
 
         $parent = $fragment ? $dom->firstChild : $dom;
 
         foreach ($parent->childNodes as $node) {
-            $this->compileNode($node, $output);
+            $this->compileNode($node, $out);
         }
 
-        $output->indent(-1);
-        $output->popScope();
-        $output->appendCode("};\n");
+        $out->indent(-1);
+        $out->popScope();
 
-        $r = $output->flush();
+        $r = $out->flush();
         return $r;
     }
 
-    protected function compileNode(DOMNode $node, CompilerComponentBuffer $output) {
+    protected function isComponent($tag) {
+        return (preg_match('`[A-Z]`', $tag[0]) || preg_match('`[.-]`', $tag));
+    }
+
+    protected function compileNode(DOMNode $node, CompilerBuffer $output) {
         switch ($node->nodeType) {
             case XML_TEXT_NODE:
                 $this->compileTextNode($node, $output);
                 break;
             case XML_ELEMENT_NODE:
+                /* @var \DOMElement $node */
                 $this->compileElementNode($node, $output);
                 break;
             case XML_COMMENT_NODE:
+                /* @var \DOMComment $node */
                 $this->compileCommentNode($node, $output);
                 break;
             case XML_DOCUMENT_TYPE_NODE:
@@ -138,7 +147,7 @@ class Compiler {
         }
     }
 
-    protected function compileCommentNode(\DOMComment $node, CompilerComponentBuffer $output) {
+    protected function compileCommentNode(\DOMComment $node, CompilerBuffer $output) {
         $comments = explode("\n", trim($node->nodeValue));
 
         $this->newline($node, $output);
@@ -147,7 +156,7 @@ class Compiler {
         }
     }
 
-    protected function compileTextNode(DOMNode $node, CompilerComponentBuffer $output) {
+    protected function compileTextNode(DOMNode $node, CompilerBuffer $output) {
         $items = $this->splitExpressions($node->nodeValue);
 
         foreach ($items as $i => list($text, $offset)) {
@@ -166,7 +175,7 @@ class Compiler {
         }
     }
 
-    protected function compileElementNode(DOMElement $node, CompilerComponentBuffer $output) {
+    protected function compileElementNode(DOMElement $node, CompilerBuffer $output) {
         list($attributes, $special) = $this->splitAttributes($node);
 
         if (!empty($special)) {
@@ -187,7 +196,7 @@ class Compiler {
         return $values;
     }
 
-    protected function expr($expr, CompilerComponentBuffer $output, \DOMAttr $attr = null) {
+    protected function expr($expr, CompilerBuffer $output, \DOMAttr $attr = null) {
         $names = $output->getScopeVariables();
 
         $compiled = $this->expressions->compile($expr, function ($name) use ($names) {
@@ -227,7 +236,7 @@ class Compiler {
         return [$attributes, $special];
     }
 
-    protected function compileSpecialNode(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    protected function compileSpecialNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $specialName = key($special);
 
         switch ($specialName) {
@@ -244,12 +253,16 @@ class Compiler {
                 $this->compileLiteral($node, $attributes, $special, $output);
                 break;
             case '':
-                $this->compileElement($node, $attributes, $output);
+                if ($this->isComponent($node->tagName)) {
+                    $this->compileComponent($node, $attributes, $special, $output);
+                } else {
+                    $this->compileElement($node, $attributes, $output);
+                }
                 break;
         }
     }
 
-    protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerComponentBuffer $output) {
+    protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $output) {
         // Don't double up comments.
         if ($node->previousSibling && $node->previousSibling->nodeType === XML_COMMENT_NODE) {
             return;
@@ -267,7 +280,7 @@ class Compiler {
         }
     }
 
-    protected function compileOpenTag(DOMElement $node, $attributes, CompilerComponentBuffer $output) {
+    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $output) {
         $output->echoLiteral('<'.$node->tagName);
 
         foreach ($attributes as $name => $attribute) {
@@ -291,13 +304,13 @@ class Compiler {
         }
     }
 
-    protected function compileCloseTag(DOMElement $node, CompilerComponentBuffer $output) {
+    protected function compileCloseTag(DOMElement $node, CompilerBuffer $output) {
         if ($node->hasChildNodes()) {
             $output->echoLiteral("</{$node->tagName}>");
         }
     }
 
-    protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $this->compileTagComment($node, $attributes, $special, $output);
         $expr = $this->expr($special[self::T_IF]->value, $output);
         unset($special[self::T_IF]);
@@ -324,7 +337,7 @@ class Compiler {
         $output->appendCode("}\n");
     }
 
-    protected function compileEach(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    protected function compileEach(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $this->compileTagComment($node, $attributes, $special, $output);
         $this->compileOpenTag($node, $attributes, $output);
 
@@ -354,7 +367,7 @@ class Compiler {
         $this->compileCloseTag($node, $output);
     }
 
-    protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $this->compileTagComment($node, $attributes, $special, $output);
         $with = $this->expr($special[self::T_WITH]->value, $output);
         unset($special[self::T_WITH]);
@@ -369,7 +382,7 @@ class Compiler {
         $output->popScope();
     }
 
-    protected function compileLiteral(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    protected function compileLiteral(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $this->compileTagComment($node, $attributes, $special, $output);
         unset($special[self::T_LITERAL]);
 
@@ -383,7 +396,7 @@ class Compiler {
         $this->compileCloseTag($node, $output);
     }
 
-    protected function compileElement(DOMElement $node, array $attributes, CompilerComponentBuffer $output) {
+    protected function compileElement(DOMElement $node, array $attributes, CompilerBuffer $output) {
         $this->compileOpenTag($node, $attributes, $output);
 
         foreach ($node->childNodes as $childNode) {
@@ -430,9 +443,9 @@ class Compiler {
      * @param DOMElement $node
      * @param array $attributes
      * @param array $special
-     * @param CompilerComponentBuffer $output
+     * @param CompilerBuffer $output
      */
-    private function compileEachLoop(DOMElement $node, array $attributes, array $special, CompilerComponentBuffer $output) {
+    private function compileEachLoop(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
         $each = $this->expr($special[self::T_EACH]->value, $output);
         unset($special[self::T_EACH]);
 

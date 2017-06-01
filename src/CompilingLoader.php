@@ -24,6 +24,12 @@ class CompilingLoader implements ComponentLoaderInterface {
      */
     private $compiler;
 
+    public function __construct(TemplateLoaderInterface $templateLoader, $cachePath) {
+        $this->templateLoader = $templateLoader;
+        $this->cachePath = $cachePath;
+        $this->compiler = new Compiler();
+    }
+
     /**
      * A safe version of {@link file_put_contents()} that also clears op caches.
      *
@@ -32,7 +38,10 @@ class CompilingLoader implements ComponentLoaderInterface {
      * @return bool Returns **true** on success or **false** on failure.
      */
     private function filePutContents($path, $contents) {
-        $tmpPath = tempnam(dirname($path), 'ebi');
+        if (!file_exists(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+        $tmpPath = tempnam(dirname($path), 'ebi-');
         $r = false;
         if (file_put_contents($tmpPath, $contents) !== false) {
             chmod($tmpPath, 0664);
@@ -58,13 +67,15 @@ class CompilingLoader implements ComponentLoaderInterface {
      */
     public function load($component, Ebi $ebi) {
         $cacheKey = $this->templateLoader->cacheKey($component);
-        $cachePath = "{$this->cachePath}/$cacheKey";
+        $cachePath = "{$this->cachePath}/$cacheKey.php";
 
         if (!file_exists($cachePath)) {
             $src = $this->templateLoader->load($component);
-            $php = $this->compiler->compile($src, ['basename' => $component]);
 
-            $this->filePutContents($cachePath, $php);
+            $php = $this->compiler->compile($src, ['basename' => $component]);
+            $comment = "/*\n".str_replace('*/', '❄/', trim($src))."\n*/";
+
+            $this->filePutContents($cachePath, "<?php\n$comment\n$php");
         }
 
         $fn = $ebi->requireFile($cachePath);

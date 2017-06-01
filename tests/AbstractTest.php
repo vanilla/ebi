@@ -9,7 +9,9 @@ namespace Ebi\Tests;
 
 
 use Ebi\Compiler;
+use Ebi\CompilingLoader;
 use Ebi\Ebi;
+use Ebi\FilesystemLoader;
 
 abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     public function provideSpecTests($file) {
@@ -28,25 +30,12 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
         return $r;
     }
 
-    public function renderTemplate($filename, $data) {
-        $template = file_get_contents(__DIR__."/fixtures/$filename");
-        $compiler = new Compiler();
+    public function renderFixture($component, $data) {
+        $ebi = new Ebi(new FilesystemLoader(__DIR__.'/fixtures'), __DIR__.'/cache/fixtures');
 
-        $php = $compiler->compile($template);
-        $templateComment = "/*\n".str_replace('*/', '❄/', trim($template))."\n*/";
 
-        $cachePath = __DIR__."/cache/fixtures/$filename.php";
-        if (!file_exists(dirname($cachePath))) {
-            mkdir(dirname($cachePath), 0777, true);
-        }
-
-        file_put_contents($cachePath, "<?php\n$templateComment\nreturn $php");
-
-        $fn = require $cachePath;
+        $fn = $ebi->lookup($component);
         $this->assertInstanceOf(\Closure::class, $fn);
-
-        $hat = new Ebi();
-        $fn = \Closure::bind($fn, $hat, Ebi::class);
 
         ob_start();
         $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
@@ -54,7 +43,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
         error_reporting($errs);
         $rendered = ob_get_clean();
 
-        $renderedPath = __DIR__."/cache/fixtures/rendered/$filename";
+        $renderedPath = __DIR__."/cache/fixtures/rendered/$component";
         if (!file_exists(dirname($renderedPath))) {
             mkdir(dirname($renderedPath), 0777, true);
         }
@@ -62,28 +51,11 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-        $compiler = new Compiler();
+        $loader = new TestTemplateLoader();
+        $ebi = new Ebi($loader, __DIR__.'/cache/specs');
 
-        $php = $compiler->compile($template);
-        $templateComment = "/*\n".str_replace('*/', '❄/', trim($template))."\n*/";
-
-        $cachePath = __DIR__."/cache/specs/$name.php";
-        if (!file_exists(dirname($cachePath))) {
-            mkdir(dirname($cachePath), 0777, true);
-        }
-
-        file_put_contents($cachePath, "<?php\n$templateComment\nreturn $php");
-        $fn = require $cachePath;
-        $this->assertInstanceOf(\Closure::class, $fn);
-
-        $hat = new Ebi();
-        $fn = \Closure::bind($fn, $hat, Ebi::class);
-
-        ob_start();
-        $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
-        $fn($data);
-        error_reporting($errs);
-        $rendered = ob_get_clean();
+        $loader->addTemplate($name, $template);
+        $rendered = $ebi->render($name, $data);
 
         $this->assertEquals($expected, $rendered);
     }

@@ -12,35 +12,52 @@ class Ebi {
     /**
      * @var callable[]
      */
-    private $components;
+    private $components = [];
 
     /**
      * @var ComponentLoaderInterface
      */
     private $componentLoader;
 
+    public function __construct(TemplateLoaderInterface $templateLoader, $cachePath) {
+        $this->componentLoader = new CompilingLoader($templateLoader, $cachePath);
+    }
 
     /**
-     * Render a component.
+     * Write a component to the output buffer.
      *
      * @param string $name The name of the component.
      * @param array ...$args
      */
-    public function render($name, ...$args) {
-        if ($component = $this->get($name)) {
+    public function write($name, ...$args) {
+        if ($component = $this->lookup($name)) {
             call_user_func($component, ...$args);
         } else {
-            trigger_error("Could not find component $name", E_USER_NOTICE);
+            trigger_error("Could not find component $name.", E_USER_NOTICE);
         }
     }
 
-    public function get($name) {
-        if ($this->componentLoader && !array_key_exists($name, $this->components)) {
-            $this->componentLoader->load($name, $this);
+    public function render($component, ...$args) {
+        if ($component = $this->lookup($component)) {
+            ob_start();
+            $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
+            call_user_func($component, ...$args);
+            error_reporting($errs);
+            $str = ob_get_clean();
+            return $str;
+        } else {
+            trigger_error("Could not find component $component.", E_USER_NOTICE);
+            return null;
+        }
+    }
+
+    public function lookup($component) {
+        if ($this->componentLoader && !array_key_exists($component, $this->components)) {
+            $this->componentLoader->load($component, $this);
         }
 
-        if (isset($this->components, $name)) {
-            return $this->components[$name];
+        if (isset($this->components, $component)) {
+            return $this->components[$component];
         } else {
             return null;
         }

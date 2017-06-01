@@ -9,98 +9,134 @@ namespace Ebi;
 
 
 class CompilerBuffer {
-    private $buffer = '';
-    private $literalBuffer = '';
-    private $inEcho = false;
-    private $indent = 0;
-    private $depth = 0;
-    private $scopes = [];
+    const STYLE_FUNCTION = 'return';
+    const STYLE_REGISTER = 'register';
+
+    /**
+     * @var ComponentBuffer[]
+     */
+    private $buffers;
+
+    /**
+     * @var ComponentBuffer
+     */
+    private $current;
+
+    private $basename;
+
+    private $style = self::STYLE_REGISTER;
+
+    public function __construct() {
+        $this->buffers = ['' => new ComponentBuffer()];
+        $this->current =& $this->buffers[''];
+    }
+
+    /**
+     * Select a specific component buffer.
+     * @param $component
+     */
+    public function select($component) {
+        if (!array_key_exists($component, $this->buffers)) {
+            $this->buffers[$component] = new ComponentBuffer();
+        }
+
+        $this->current =& $this->buffers[$component];
+    }
 
     public function echoLiteral($value) {
-        $this->literalBuffer .= $value;
+        $this->current->echoLiteral($value);
     }
 
     public function echoCode($php) {
-        if (empty($php)) {
-            return;
-        }
-
-        $this->flushLiteralBuffer();
-        $this->ensureEcho(true);
-        $this->buffer .= $php;
-    }
-
-    private function flushLiteralBuffer() {
-        if (!empty($this->literalBuffer)) {
-            $this->ensureEcho(true);
-            $this->buffer .= var_export($this->literalBuffer, true);
-            $this->literalBuffer = '';
-        }
-    }
-
-    private function ensureEcho($append) {
-        if (!$this->inEcho) {
-            $this->buffer .= $this->px().'echo ';
-            $this->inEcho = true;
-        } elseif ($append) {
-            $this->buffer .= ",\n".$this->px(+1);
-        }
-    }
-
-    protected function px($add = 0) {
-        return str_repeat(' ', ($this->indent + $add) * 4);
+        $this->current->echoCode($php);
     }
 
     public function appendCode($php) {
-        $this->flushLiteralBuffer();
-        $this->flushEcho();
-
-        $this->buffer .= $this->px().$php;
-    }
-
-    private function flushEcho() {
-        $this->flushLiteralBuffer();
-
-        if ($this->inEcho) {
-            $this->buffer .= ";\n";
-            $this->inEcho = false;
-        }
+        $this->current->appendCode($php);
     }
 
     public function indent($add) {
-        $this->flushEcho();
-        $this->indent += $add;
+        $this->current->indent($add);
     }
 
     public function depth($add = 1) {
-        $this->depth += $add;
+        $this->current->depth($add);
     }
 
     public function depthName($name, $add = 0) {
-        $depth = $this->depth + $add;
-
-        if ($depth === 0) {
-            return $name;
-        } else {
-            return $name.$depth;
-        }
+        return $this->current->depthName($name, $add);
     }
 
     public function pushScope(array $vars) {
-        $this->scopes[] = $vars;
+        $this->current->pushScope($vars);
     }
 
     public function popScope() {
-        array_pop($this->scopes);
+        $this->current->popScope();
     }
 
     public function getScopeVariables() {
-        $r = array_replace(...$this->scopes);
-        return $r;
+        return $this->current->getScopeVariables();
     }
 
     public function flush() {
-        $this->flushEcho();
-        return $this->buffer;
+        $result = [];
+
+        foreach ($this->buffers as $name => $buffer) {
+            if ($this->getStyle() === self::STYLE_FUNCTION && empty($name)) {
+                // Render the component return last.
+                continue;
+            }
+
+            $component = trim($this->basename.'.'.$name, '.');
+
+            $result[] = '$this->register('.var_export($component, true).', '.$buffer->flush().');';
+        }
+
+        if ($this->getStyle() === self::STYLE_FUNCTION) {
+            $result[] = $this->buffers['']->flush().';';
+        }
+
+        return implode("\n\n", $result);
+    }
+
+    /**
+     * Get the style.
+     *
+     * @return string Returns the style.
+     */
+    public function getStyle() {
+        return $this->style;
+    }
+
+    /**
+     * Set the style.
+     *
+     * @param string $style One of the **STYLE_*** constants.
+     * @return $this
+     */
+    public function setStyle($style) {
+        $this->style = $style;
+        return $this;
+    }
+
+    /**
+     * Get the basename.
+     *
+     * @return string Returns the basename.
+     */
+    public function getBasename() {
+        return $this->basename;
+    }
+
+    /**
+     * Set the basename.
+     *
+     * @param string $basename
+     * @return $this
+     */
+    public function setBasename($basename) {
+        $this->basename = $basename;
+        return $this;
     }
 }

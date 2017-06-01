@@ -17,7 +17,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase {
 
         $compiler = new Compiler();
 
-        $r = $compiler->compile($tpl);
+        $r = $compiler->compile($tpl, ['runtime' => false]);
 
         $fn = eval("return $r");
 

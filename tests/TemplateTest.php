@@ -11,11 +11,11 @@ use Ebi\Tests\Faker\FakeData;
 
 class TemplateTest extends AbstractTest {
     public function testDiscussion() {
-        $this->renderTemplate('discussion.html', new FakeData());
+        $this->renderFixture('discussion', new FakeData());
     }
 
     public function testEachAs() {
-        $this->renderTemplate('each-as.html', new FakeData());
+        $this->renderFixture('each-as', new FakeData());
     }
 
     /**
