@@ -18,6 +18,14 @@ class TemplateTest extends AbstractTest {
         $this->renderFixture('each-as', new FakeData());
     }
 
+    public function testComponentInclude() {
+        $data = ['name' => 'foo'];
+
+        $rendered = $this->renderFixture('Parent', $data);
+
+        $this->assertEquals("<div>child: {$data['name']}</div>", trim($rendered));
+    }
+
     /**
      *
      */

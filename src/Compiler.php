@@ -17,13 +17,158 @@ class Compiler {
     const T_LITERAL = 'bi-literal';
     const T_AS = 'bi-as';
     const T_COMPONENT = 'bi-component';
-    const T_CHILD = 'bi-child';
+    const T_CHILDREN = 'bi-children';
     const T_BLOCK = 'bi-block';
     const T_ELSE = 'bi-else';
     const T_EMPTY = 'bi-empty';
 
     protected static $special = [
         self::T_COMPONENT => 1, self::T_IF => 2, self::T_ELSE => 3, self::T_EACH => 4, self::T_AS => 5, self::T_EMPTY => 6, self::T_WITH => 7, self::T_LITERAL => 8
+    ];
+
+    protected static $htmlTags = [
+        'a' => 'i',
+        'abbr' => 'i',
+        'acronym' => 'i', // deprecated
+        'address' => 'b',
+//        'applet' => 'i', // deprecated
+        'area' => 'i',
+        'article' => 'b',
+        'aside' => 'b',
+        'audio' => 'i',
+        'b' => 'i',
+        'base' => 'i',
+//        'basefont' => 'i',
+        'bdi' => 'i',
+        'bdo' => 'i',
+//        'bgsound' => 'i',
+//        'big' => 'i',
+//        'blink' => 'i',
+        'blockquote' => 'b',
+        'body' => 'b',
+        'br' => 'i',
+        'button' => 'i',
+        'canvas' => 'b',
+        'caption' => 'i',
+//        'center' => 'i',
+        'cite' => 'i',
+        'code' => 'i',
+        'col' => 'i',
+        'colgroup' => 'i',
+//        'command' => 'i',
+        'content' => 'i',
+        'data' => 'i',
+        'datalist' => 'i',
+        'dd' => 'b',
+        'del' => 'i',
+        'details' => 'i',
+        'dfn' => 'i',
+        'dialog' => 'i',
+//        'dir' => 'i',
+        'div' => 'i',
+        'dl' => 'b',
+        'dt' => 'b',
+//        'element' => 'i',
+        'em' => 'i',
+        'embed' => 'i',
+        'fieldset' => 'b',
+        'figcaption' => 'b',
+        'figure' => 'b',
+//        'font' => 'i',
+        'footer' => 'b',
+        'form' => 'b',
+        'frame' => 'i',
+        'frameset' => 'i',
+        'h1' => 'b',
+        'h2' => 'b',
+        'h3' => 'b',
+        'h4' => 'b',
+        'h5' => 'b',
+        'h6' => 'b',
+        'head' => 'b',
+        'header' => 'b',
+        'hgroup' => 'b',
+        'hr' => 'b',
+        'html' => 'b',
+        'i' => 'i',
+        'iframe' => 'i',
+        'image' => 'i',
+        'img' => 'i',
+        'input' => 'i',
+        'ins' => 'i',
+        'isindex' => 'i',
+        'kbd' => 'i',
+        'keygen' => 'i',
+        'label' => 'i',
+        'legend' => 'i',
+        'li' => 'i',
+        'link' => 'i',
+//        'listing' => 'i',
+        'main' => 'b',
+        'map' => 'i',
+        'mark' => 'i',
+//        'marquee' => 'i',
+        'menu' => 'i',
+        'menuitem' => 'i',
+        'meta' => 'i',
+        'meter' => 'i',
+        'multicol' => 'i',
+        'nav' => 'b',
+        'nobr' => 'i',
+        'noembed' => 'i',
+        'noframes' => 'i',
+        'noscript' => 'b',
+        'object' => 'i',
+        'ol' => 'b',
+        'optgroup' => 'i',
+        'option' => 'b',
+        'output' => 'i',
+        'p' => 'b',
+        'param' => 'i',
+        'picture' => 'i',
+//        'plaintext' => 'i',
+        'pre' => 'b',
+        'progress' => 'i',
+        'q' => 'i',
+        'rp' => 'i',
+        'rt' => 'i',
+        'rtc' => 'i',
+        'ruby' => 'i',
+        's' => 'i',
+        'samp' => 'i',
+        'script' => 'i',
+        'section' => 'b',
+        'select' => 'i',
+//        'shadow' => 'i',
+        'slot' => 'i',
+        'small' => 'i',
+        'source' => 'i',
+//        'spacer' => 'i',
+        'span' => 'i',
+//        'strike' => 'i',
+        'strong' => 'i',
+        'style' => 'i',
+        'sub' => 'i',
+        'summary' => 'i',
+        'sup' => 'i',
+        'table' => 'b',
+        'tbody' => 'i',
+        'td' => 'i',
+        'template' => 'i',
+        'textarea' => 'i',
+        'tfoot' => 'b',
+        'th' => 'i',
+        'thead' => 'i',
+        'time' => 'i',
+        'title' => 'i',
+        'tr' => 'i',
+        'track' => 'i',
+//        'tt' => 'i',
+        'u' => 'i',
+        'ul' => 'b',
+        'var' => 'i',
+        'video' => 'b',
+        'wbr' => 'i'
     ];
 
     protected static $blocks = [
@@ -78,7 +223,7 @@ class Compiler {
     }
 
     protected function isComponent($tag) {
-        return (preg_match('`[A-Z]`', $tag[0]) || preg_match('`[.-]`', $tag));
+        return !isset(static::$htmlTags[$tag]);
     }
 
     protected function compileNode(DOMNode $node, CompilerBuffer $output) {
@@ -178,7 +323,7 @@ class Compiler {
     protected function compileElementNode(DOMElement $node, CompilerBuffer $output) {
         list($attributes, $special) = $this->splitAttributes($node);
 
-        if (!empty($special)) {
+        if (!empty($special) || $this->isComponent($node->tagName)) {
             $this->compileSpecialNode($node, $attributes, $special, $output);
         } else {
             $this->compileOpenTag($node, $node->attributes, $output);
@@ -260,6 +405,19 @@ class Compiler {
                 }
                 break;
         }
+    }
+
+    protected function compileComponent(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
+        // Generate the attributes into a property array.
+        $props = [];
+        foreach ($attributes as $name => $attribute) {
+            /* @var \DOMAttr $attr */
+            $expr = $this->expr($attribute->value, $out);
+            $props[] = var_export($name, true).' => '.$expr;
+        }
+        $propsStr = '['.implode(', ', $props).']';
+
+        $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr);\n");
     }
 
     protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $output) {

@@ -30,6 +30,7 @@ class Ebi {
      * @param array ...$args
      */
     public function write($name, ...$args) {
+        $name = strtolower($name);
         if ($component = $this->lookup($name)) {
             call_user_func($component, ...$args);
         } else {
@@ -38,7 +39,7 @@ class Ebi {
     }
 
     public function render($component, ...$args) {
-        if ($component = $this->lookup($component)) {
+        if ($component = $this->lookup(strtolower($component))) {
             ob_start();
             $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
             call_user_func($component, ...$args);
@@ -52,6 +53,8 @@ class Ebi {
     }
 
     public function lookup($component) {
+        $component = strtolower($component);
+
         if ($this->componentLoader && !array_key_exists($component, $this->components)) {
             $this->componentLoader->load($component, $this);
         }

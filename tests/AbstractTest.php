@@ -34,20 +34,15 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
         $ebi = new Ebi(new FilesystemLoader(__DIR__.'/fixtures'), __DIR__.'/cache/fixtures');
 
 
-        $fn = $ebi->lookup($component);
-        $this->assertInstanceOf(\Closure::class, $fn);
-
-        ob_start();
-        $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
-        $fn($data);
-        error_reporting($errs);
-        $rendered = ob_get_clean();
+        $rendered = $ebi->render($component, $data);
 
         $renderedPath = __DIR__."/cache/fixtures/rendered/$component";
         if (!file_exists(dirname($renderedPath))) {
             mkdir(dirname($renderedPath), 0777, true);
         }
         file_put_contents($renderedPath, $rendered);
+
+        return $rendered;
     }
 
     public function doTest($name, $template, $data, $expected) {
