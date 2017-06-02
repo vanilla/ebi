@@ -21,6 +21,7 @@ class Compiler {
     const T_BLOCK = 'bi-block';
     const T_ELSE = 'bi-else';
     const T_EMPTY = 'bi-empty';
+    const T_X = 'bi-x';
 
     protected static $special = [
         self::T_COMPONENT => 1, self::T_IF => 2, self::T_ELSE => 3, self::T_EACH => 4, self::T_AS => 5, self::T_EMPTY => 6, self::T_WITH => 7, self::T_LITERAL => 8
@@ -43,6 +44,7 @@ class Compiler {
         'bdo' => 'i',
 //        'bgsound' => 'i',
 //        'big' => 'i',
+        'bi-x' => 'i',
 //        'blink' => 'i',
         'blockquote' => 'b',
         'body' => 'b',
@@ -188,18 +190,19 @@ class Compiler {
 
     public function compile($src, array $options = []) {
         $options += ['basename' => '', 'runtime' => true];
+        $src = trim($src);
 
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<Ebi>$src</Ebi>";
+            $src = "<ebi>$src</ebi>";
             $fragment = true;
         }
 
         $dom->loadHTML($src, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOCDATA | LIBXML_NOXMLDECL);
-        $arr = $this->domToArray($dom);
+//        $arr = $this->domToArray($dom);
 
         $out = new CompilerBuffer();
 
@@ -385,6 +388,9 @@ class Compiler {
         $specialName = key($special);
 
         switch ($specialName) {
+            case self::T_COMPONENT:
+                $this->compileComponentRegister($node, $attributes, $special, $output);
+                break;
             case self::T_IF:
                 $this->compileIf($node, $attributes, $special, $output);
                 break;
@@ -392,14 +398,19 @@ class Compiler {
                 $this->compileEach($node, $attributes, $special, $output);
                 break;
             case self::T_WITH:
-                $this->compileWith($node, $attributes, $special, $output);
+                if ($this->isComponent($node->tagName)) {
+                    // With has a special meaning in components.
+                    $this->compileComponentInclude($node, $attributes, $special, $output);
+                } else {
+                    $this->compileWith($node, $attributes, $special, $output);
+                }
                 break;
             case self::T_LITERAL:
                 $this->compileLiteral($node, $attributes, $special, $output);
                 break;
             case '':
                 if ($this->isComponent($node->tagName)) {
-                    $this->compileComponent($node, $attributes, $special, $output);
+                    $this->compileComponentInclude($node, $attributes, $special, $output);
                 } else {
                     $this->compileElement($node, $attributes, $output);
                 }
@@ -407,12 +418,50 @@ class Compiler {
         }
     }
 
-    protected function compileComponent(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
+    /**
+     * Compile component registering.
+     *
+     * @param DOMElement $node
+     * @param $attributes
+     * @param $special
+     * @param CompilerBuffer $out
+     */
+    public function compileComponentRegister(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
+        $name = strtolower($special[self::T_COMPONENT]->value);
+        unset($special[self::T_COMPONENT]);
+
+        $prev = $out->select($name);
+        $out->pushScope(['this' => 'props']);
+        $out->indent(+1);
+
+        try {
+            $this->compileSpecialNode($node, $attributes, $special, $out);
+        } finally {
+            $out->popScope();
+            $out->indent(-1);
+            $out->select($prev);
+        }
+    }
+
+    /**
+     * Compile component inclusion and rendering.
+     *
+     * @param DOMElement $node
+     * @param $attributes
+     * @param $special
+     * @param CompilerBuffer $out
+     */
+    protected function compileComponentInclude(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
         // Generate the attributes into a property array.
         $props = [];
         foreach ($attributes as $name => $attribute) {
             /* @var \DOMAttr $attr */
-            $expr = $this->expr($attribute->value, $out);
+            if ($this->isExpression($attribute->value)) {
+                $expr = $this->expr(substr($attribute->value, 1, -1), $out, $attribute);
+            } else {
+                $expr = var_export($attribute->value, true);
+            }
+
             $props[] = var_export($name, true).' => '.$expr;
         }
         $propsStr = '['.implode(', ', $props).']';
@@ -439,6 +488,10 @@ class Compiler {
     }
 
     protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $output) {
+        if ($node->tagName === self::T_X) {
+            return;
+        }
+
         $output->echoLiteral('<'.$node->tagName);
 
         foreach ($attributes as $name => $attribute) {
@@ -446,7 +499,7 @@ class Compiler {
             $output->echoLiteral(' '.$name.'="');
 
             // Check for an attribute expression.
-            if (preg_match('`^{\S.*}$`', $attribute->value)) {
+            if ($this->isExpression($attribute->value)) {
                 $output->echoCode('htmlspecialchars('.$this->expr(substr($attribute->value, 1, -1), $output, $attribute).')');
             } else {
                 $output->echoLiteral(htmlspecialchars($attribute->value));
@@ -462,8 +515,12 @@ class Compiler {
         }
     }
 
+    private function isExpression($value) {
+        return preg_match('`^{\S.*}$`', $value);
+    }
+
     protected function compileCloseTag(DOMElement $node, CompilerBuffer $output) {
-        if ($node->hasChildNodes()) {
+        if ($node->hasChildNodes() && $node->tagName !== self::T_X) {
             $output->echoLiteral("</{$node->tagName}>");
         }
     }

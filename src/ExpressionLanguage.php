@@ -54,6 +54,9 @@ class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\Expressio
         $this->registerFunction('trim');
         $this->registerFunction('sprintf');
         $this->registerFunction('substr');
+        $this->registerFunction('dateFormat', function ($expr) {
+            return "\$this->dateFormat($expr)";
+        });
 
         $this->registerFunction('@class', function ($expr) {
             return "\$this->cssClass($expr)";

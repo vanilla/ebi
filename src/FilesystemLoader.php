@@ -59,6 +59,12 @@ class FilesystemLoader implements TemplateLoaderInterface {
                 return $full ? $path : $subpath;
             }
 
+            if ($pos = strrpos($subpath, DIRECTORY_SEPARATOR)) {
+                $subpath = substr($subpath, 0, $pos - 1);
+            } else {
+                break;
+            }
+
         } while (!empty($subpath));
 
         return '';

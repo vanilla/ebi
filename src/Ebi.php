@@ -39,7 +39,7 @@ class Ebi {
     }
 
     public function render($component, ...$args) {
-        if ($component = $this->lookup(strtolower($component))) {
+        if ($component = $this->lookup($component)) {
             ob_start();
             $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
             call_user_func($component, ...$args);
@@ -59,7 +59,7 @@ class Ebi {
             $this->componentLoader->load($component, $this);
         }
 
-        if (isset($this->components, $component)) {
+        if (isset($this->components[$component])) {
             return $this->components[$component];
         } else {
             return null;
@@ -94,5 +94,27 @@ class Ebi {
         } else {
             return (string)$expr;
         }
+    }
+
+    public function dateFormat($date, $format = 'c') {
+        if (is_string($date)) {
+            try {
+                $date = new \DateTimeImmutable($date);
+            } catch (\Exception $ex) {
+                return '#error#';
+            }
+        } elseif (empty($date)) {
+            return '';
+        } elseif (is_int($date)) {
+            try {
+                $date = new \DateTimeImmutable('@'.$date);
+            } catch (\Exception $ex) {
+                return '#error#';
+            }
+        } elseif (!$date instanceof \DateTimeInterface) {
+            return '#error#';
+        }
+
+        return $date->format($format);
     }
 }

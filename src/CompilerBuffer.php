@@ -22,13 +22,15 @@ class CompilerBuffer {
      */
     private $current;
 
+    private $currentName;
+
     private $basename;
 
     private $style = self::STYLE_REGISTER;
 
     public function __construct() {
         $this->buffers = ['' => new ComponentBuffer()];
-        $this->current =& $this->buffers[''];
+        $this->select('');
     }
 
     /**
@@ -36,11 +38,16 @@ class CompilerBuffer {
      * @param $component
      */
     public function select($component) {
+        $previous = $this->currentName;
+        $this->currentName = $component;
+
         if (!array_key_exists($component, $this->buffers)) {
             $this->buffers[$component] = new ComponentBuffer();
         }
 
         $this->current =& $this->buffers[$component];
+
+        return $previous;
     }
 
     public function echoLiteral($value) {
@@ -88,7 +95,13 @@ class CompilerBuffer {
                 continue;
             }
 
-            $component = trim($this->basename.'.'.$name, '.');
+            if (empty($name)) {
+                $component = $this->basename;
+            } elseif ($name[0] === '.') {
+                $component = trim($this->basename.$name, '.');
+            } else {
+                $component = $name;
+            }
 
             $result[] = '$this->register('.var_export($component, true).', '.$buffer->flush().');';
         }

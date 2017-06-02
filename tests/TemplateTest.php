@@ -26,6 +26,14 @@ class TemplateTest extends AbstractTest {
         $this->assertEquals("<div>child: {$data['name']}</div>", trim($rendered));
     }
 
+    public function testComponentRegister() {
+        $data = ['dateInserted' => '2001-01-01'];
+
+        $rendered = $this->renderFixture('bi-component', $data);
+
+        $this->assertEquals('<time datetime="2001-01-01T00:00:00-05:00">2001-01-01T00:00:00-05:00</time>', trim($rendered));
+    }
+
     /**
      *
      */

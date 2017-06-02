@@ -1,6 +1,6 @@
 overview: Basic tests for template language features.
 tests:
-  - name: if
+  - name: bi-if
     template: >
       <p bi-if="empty(items)">empty</p>
     tests:
@@ -13,7 +13,7 @@ tests:
       - name: has data
         expected: ''
         data: { items: [1] }
-  - name: if else
+  - name: bi-if else
     template: |
       <div bi-if="signedIn">Welcome!</div>
       <div bi-else>Sign in to participate.</div>
@@ -24,7 +24,7 @@ tests:
       - name: 'false'
         data: { signedIn: false }
         expected: '<div>Sign in to participate.</div>'
-  - name: each
+  - name: bi-each
     template: |
       <ul bi-each="people">
         <li>Hi {name}!</li>
@@ -39,7 +39,7 @@ tests:
             - { name: you }
             - { name: us }
         expected: '<ul><li>Hi you!</li><li>Hi us!</li></ul>'
-  - name: each as
+  - name: bi-each bi-as
     data:
       name: 'How'
       comments:
@@ -52,30 +52,34 @@ tests:
             <li>{name}: {comment.body}</li>
           </ul>
         expected: '<ul><li>How: do I?</li><li>How: do you?</li></ul>'
-      - name: with index
+      - name: bi-with index
         template: |
           <ul bi-each="comments" bi-as="i comment">
             <li>{i} {name}: {comment.body}</li>
           </ul>
         expected: '<ul><li>0 How: do I?</li><li>1 How: do you?</li></ul>'
-  - name: each empty
+  - name: bi-each bi-empty
     template: |
       <ul bi-each="this">
         <li>{b}</li>
         <li bi-empty>empty</li>
       </ul>
     tests:
-      - name: with data
+      - name: bi-with data
         data: [ 'a' ]
         expected: '<ul><li>a</li></ul>'
       - name: no data
         data: []
         expected: '<ul><li>empty</li></ul>'
-  - name: with
+  - name: bi-with
     template: '<div bi-with="user">Hi {name}</div>'
     data: { name: parent, user: { name: child } }
     expected: '<div>Hi child</div>'
-  - name: literal
+  - name: bi-literal
     template: '<code bi-literal>Hello <b bi-literal>{username}</b> a > b</code>'
     data: []
     expected: '<code>Hello <b bi-literal>{username}</b> a &gt; b</code>'
+  - name: bi-x
+    template: '<bi-x bi-if="signedIn">Welcome back</bi-x>'
+    data: {signedIn: true}
+    expected: 'Welcome back'
