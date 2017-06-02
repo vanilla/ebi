@@ -2,165 +2,266 @@
 
 *HTML Attribute Template Markup Language*
 
-The Ebi templating language uses basic HTML and special attributes for a simple yet powerful templating language.
+The Ebi template language uses basic HTML and special attributes for a simple yet powerful template language.
 
-## Basic Templating
+## The Basics of a Template
 
 In general you write normal HTML. Data is included in the template by including it between `{...}`. Other special functionality is added via special template attributes.
 
+## Data Interpolation
+
+Data is included in a template by putting it between `{...}` braces. This is known as "interpolation" and there are quite a few options.
+
+### Fields
+
+To include a field from your data use its name.
+
+```html
+<p>Hello {firstName} {lastName}.</p>
+```
+
+This will include the "firstName" and "lastName" database keys. You can access deeply nested arrays by separating field names with dots.
+
+```html
+<p>Hello {user.firstName} {user.lastName}.</p>
+```
+
+### Functions
+
+### Unescaping Data
+
+All variables are HTML escaped by default. If you want to return unescaped HTML, you can use the **unescape** function.
+
+```html
+<p>{unescape(bodyHtml)}</p>
+```
+
 ## Template Attributes
 
-### if
+### bi-if
 
 Only display an element if the condition is true.
 
 ```html
-<p if="empty(items)">
-There are no items!!!
+<p bi-if="empty(items)">
+There are no items!
 </p>
 ```
 
 ```php
-if (empty($props['items'])) {
-    echo "<p>\nThere are no items!!!\n</p>";
+if (empty($data['items'])) {
+    echo "<p>There are no items!</p>";
 }
 ```
 
-### else
+### bi-else
 
 Add an else element in conjunction with an if element.
 
 ```html
-<div if="signedIn">
-  Welcome!
+<div bi-if="signedIn">
+    Welcome!
 </div>
-<div else>
-  Sign in to participate.
+<div bi-else>
+    Sign in to participate.
 </div>
 ```
 
 ```php
-if ($props['signedIn']) {
+if ($data['signedIn']) {
     echo '<div>Welcome!</div>';
 } else {
     echo '<div>Sign in to participate.</div>';
 }
 ```
 
-### each
+### bi-each
 
 Loop over elements.
 
 ```html
-<ul each="people">
-  <li>Hi {first} {last}!</li>
+<ul bi-each="people">
+    <li>Hi {first} {last}!</li>
 </ul>
 ```
 
 ```php
 echo '<ul>';
-foreach ($props['people'] as $props1) {
+foreach ($data['people'] as $data1) {
     echo 'Hi ',
-        htmlspecialchars($props1['first']),
+        $this->escape($data1['first']),
         ' ',
-        htmlspecialchars($props1['last']);
+        $this->escape($data1['last']);
 }
 echo '</ul>';
 ```
 
-### as
+### bi-as
 
 Name the iterator element so that you can still reference the parent.
 
 ```html
-<ul each="comments" as="comment">
-  <li>{name}: {comment.body}</li>
+<ul bi-each="comments" bi-as="i comment">
+    <li>{name}: {comment.body} #{i}</li>
 </ul>
 ```
 
 ```php
 echo '<ul>';
-foreach ($conext['comments'] as $i1 => $props1) {
+foreach ($conext['comments'] as $i1 => $data1) {
     echo '<li>',
-        htmlspecialchars($props['name']),
+        $this->escape($data['name']),
         ': ',
-        htmlspecialchars($props1['body']),
+        $this->escape($data1['body']),
+        ' #',
+        $this->escape($i1)
         '</li>';
 }
 echo '</ul>';
 ```
 
-### empty
+### bi-empty
 
 Specify a template when there are no items.
 
 ```html
-<ul each="messages">
-  <li>{body}</li>
-  <li empty>There are no messages.</li>
+<ul bi-each="messages">
+    <li>{body}</li>
+    <li bi-empty>There are no messages.</li>
 </ul>
 ```
 
 ```php
 echo '<ul>';
-if (empty($props['messages'])) {
+if (empty($data['messages'])) {
     echo '<li>There are no messages.</li>';
 } else {
-    foreach ($props['message'] as $i1 => $props1) {
+    foreach ($data['message'] as $i1 => $data1) {
         echo '<li>',
-            htmlspecialchars($props1['body']),
+            $this->escape($data1['body']),
             '</li>';
     }
 }
 echo '</ul>';
 ```
 
-### with
+### bi-with
 
 Pass an item into a template.
 
 ```html
-<div with="user">
-  Hello {username}.
+<div bi-with="user">
+    Hello {name}.
 </div>
 ```
 
 ```php
+$data1 = $data['user'];
 echo '<div>',
     'Hello ',
-    htmlspecialchars($props['user']['username']);
+    $this->escape($data1['name']),
+    '</div>';
 ```
 
-### literal
+### bi-literal
 
 Don't parse templates within a literal.
 
 ```html
-<code literal>Hello <b literal>{username}</b></code>
+<code bi-literal>Hello <b bi-literal>{username}</b></code>
 ```
 
 ```php
-echo '<code>Hello <b literal>{username}</b></code>';
+echo '<code>Hello <b bi-literal>{username}</b></code>';
 ```
 
-### component
+### bi-x
+
+Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the **bi-x** tag which will only render its contents.
 
 ```html
-<time component="long-date" datetime="{dateFormat(this, 'c')}">{dateFormat(this, 'r')}</time>
-
-<long-date props="dateInserted" />
+<bi-x bi-if="signedIn">Welcome back</bi-x>
 ```
 
 ```php
-$this->registerComponent('LongDate', function ($props) {
-    echo '<time datetime=",
-        htmlspecialchars(dateFormat($props, 'c')),
+if ($props['signedIn']) {
+  echo 'Welcome back';
+}
+```
+
+### bi-component
+
+Define a component that can be used later in the template.
+
+```html
+<time bi-component="long-date" datetime="{dateFormat(date, 'c')}">{dateFormat(date, 'r')}</time>
+
+<long-date date="{dateInserted}" />
+```
+
+```php
+$this->register('long-date', function ($props) {
+    echo '<time datetime="',
+        htmlspecialchars(dateFormat($props['date'], 'c')),
         '">',
-        dateFormat($props, 'r'),
+        htmlspecialchars(dateFormat($props['date'], 'r')),
         '</time>';
 });
 
-$this->renderComponent('LongDate', $props['dateInserted']);
+$this->render('long-date', ['date' => $data['dateInserted']]);
+```
+
+Components must begin with a capital letter or include a dash or dot. Otherwise they will be rendered as normal HTML tags.
+
+### Component Data
+
+By default, components inherit the current scope's data. There are a few more things you can do to pass additional data into a component.
+
+#### Pass Data Using `bi-with`???
+
+If you want to pass data other than the current context into a component you use the `with` attribute.
+
+```html
+<div class="post post-commment" bi-component="Comment">
+  <img src="{author.photoUrl}" /> <a href="author.url">{author.username}</a>
+
+  <p>{unescape(body)}</p>
+</div>
+
+<Comment bi-with="lastComment" />
+```
+
+### bi-child and bi-block
+
+You can define custom content elements within a component with blocks. An unnamed block will uses the same tag it's declared in. If you name a block then the name becomes its tag name.
+
+```html
+<!-- Declare the layout component. -->
+<html bi-component="layout">
+  <head><title bi-child="title" /></head>
+  <body>
+    <h1 bi-child="title" />
+    <div class="content" bi-child="content" />
+  </body>
+</html>
+
+<!-- Use the layout component. -->
+<layout>
+  <bi-x bi-block="title">Hello world!</bi-x>
+  <p bi-block="content">When you put yourself out there you will always do well.</p>
+</layout>
+```
+
+The blocks get inserted into the component when it is used.
+
+```html
+<html>
+  <head><title>Hello world!</title>
+  <body>
+    <h1>Hello world!</title>
+    <div class="content"><p>When you put yourself out there you will always do well.</p></div>
+  </body>
+</html>
 ```
 
 ## HTML Utilities
@@ -195,7 +296,7 @@ Note the double braces in the above example. The first brace tells us we are usi
 
 Whitespace around block level elements is trimmed by default resulting in more compact output of your HTML.
 
-### HTML comments
+### HTML Comments
 
 Any HTML comments that you declare in the template will be added as PHP comments in the compiled template function. This is useful for debugging or for static template generation.
 
@@ -205,7 +306,7 @@ Any HTML comments that you declare in the template will be added as PHP comments
 ```
 
 ```php
-return function ($props) {
+return function ($data) {
     // Do something.
     echo '<p>wut!?</p>';
 };
