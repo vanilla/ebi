@@ -1,4 +1,4 @@
-overview: Specific HTML utilities
+overview: HTML utilities
 tests:
   - name: css class
     template: >
@@ -11,6 +11,8 @@ tests:
         data: ['a', 'c']
       - name: with string
         data: 'a c'
+      - name: nested data
+        data: [{a: true, vv: {c: true}}]
   - name: comments
     template: |
       <!-- Do something. -->

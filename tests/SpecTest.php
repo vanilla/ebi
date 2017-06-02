@@ -37,7 +37,7 @@ class SpecTest extends AbstractTest {
     }
 
     public function provideHtmlUtilTests() {
-        $r = $this->provideSpecTests('03-html-utils.yml');
+        $r = $this->provideSpecTests('03-utils.yml');
         return $r;
     }
 }

@@ -84,7 +84,9 @@ class Ebi {
         if (is_array($expr)) {
             $classes = [];
             foreach ($expr as $i => $val) {
-                if (is_int($i)) {
+                if (is_array($val)) {
+                    $classes[] = $this->cssClass($val);
+                } elseif (is_int($i)) {
                     $classes[] = $val;
                 } elseif (!empty($val)) {
                     $classes[] = $i;
