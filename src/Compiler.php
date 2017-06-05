@@ -190,6 +190,7 @@ class Compiler {
 
     public function compile($src, array $options = []) {
         $options += ['basename' => '', 'runtime' => true];
+
         $src = trim($src);
 
         $dom = new \DOMDocument();
@@ -315,7 +316,11 @@ class Compiler {
 
         foreach ($items as $i => list($text, $offset)) {
             if (preg_match('`^{\S`', $text)) {
-                $out->echoCode('htmlspecialchars('.$this->expr(substr($text, 1, -1), $out).')');
+                if (preg_match('`^{\s*unescape\((.+)\)\s*}$`', $text, $m)) {
+                    $out->echoCode($this->expr($m[1], $out));
+                } else {
+                    $out->echoCode('htmlspecialchars('.$this->expr(substr($text, 1, -1), $out).')');
+                }
             } else {
 //                if ($i === 0) {
 //                    $text = $this->ltrim($text, $node, $out);

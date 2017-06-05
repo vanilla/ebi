@@ -18,3 +18,7 @@ tests:
       <!-- Do something. -->
       <p>wut!?</p>
     expected: '<p>wut!?</p>'
+  - name: unescape
+    template: '{unescape(a)}'
+    data: {a: '<b>foo</b>'}
+    expected: <b>foo</b>
