@@ -457,7 +457,7 @@ class Compiler {
      * @param $special
      * @param CompilerBuffer $out
      */
-    protected function compileComponentInclude(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
+    protected function compileComponentInclude(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         // Generate the attributes into a property array.
         $props = [];
         foreach ($attributes as $name => $attribute) {
@@ -471,6 +471,16 @@ class Compiler {
             $props[] = var_export($name, true).' => '.$expr;
         }
         $propsStr = '['.implode(', ', $props).']';
+
+        if (isset($special[self::T_WITH])) {
+            $withExpr = $this->expr($special[self::T_WITH]->value, $out, $special[self::T_WITH]);
+            unset($special[self::T_WITH]);
+
+            $propsStr = empty($props) ? $withExpr : $propsStr.' + (array)'.$withExpr;
+        } elseif (empty($props)) {
+            // By default the current context is passed to components.
+            $propsStr = $this->expr('this', $out);
+        }
 
         $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr);\n");
     }

@@ -1,0 +1,18 @@
+overview: Basic tests for template language features.
+tests:
+  - name: bi-component
+    template: >
+      <div bi-component="foo">Hello {name}</div><foo name="{foo}" />
+    expected: <div>Hello Bar!</div>
+    data: {foo: 'Bar', name: 'Baz', child: {name: 'Frank'}}
+    tests:
+      - name: default bi-with
+        template: <div bi-component="foo">Hello {name}!</div><foo />
+        expected: <div>Hello Baz!</div>
+      - name: bi-with
+        template: <div bi-component="foo">Hello {name}!</div><foo bi-with="child" />
+        expected: <div>Hello Frank!</div>
+      - name: overridden bi-with
+        template: >
+          <div bi-component="foo">Hello {name}{punc ?: "!"}</div><foo bi-with="child" punc="?" />
+        expected: <div>Hello Frank?</div>
