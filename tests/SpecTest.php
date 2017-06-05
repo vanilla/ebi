@@ -30,6 +30,22 @@ class SpecTest extends AbstractTest {
      * @param $template
      * @param $data
      * @param $expected
+     * @dataProvider provideComponentTests
+     */
+    public function testComponents($name, $template, $data, $expected) {
+        $this->doTest($name, $template, $data, $expected);
+    }
+
+    public function provideComponentTests() {
+        $r = $this->provideSpecTests('02-components.yml');
+        return $r;
+    }
+
+    /**
+     * @param $name
+     * @param $template
+     * @param $data
+     * @param $expected
      * @dataProvider provideHtmlUtilTests
      */
     public function testHtmlUtilities($name, $template, $data, $expected) {

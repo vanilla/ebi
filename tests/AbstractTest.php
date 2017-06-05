@@ -46,7 +46,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-//        if ($name !== "01-language bi-x") {
+//        if ($name !== '01-language bi-if else true') {
 //            return;
 //        }
 

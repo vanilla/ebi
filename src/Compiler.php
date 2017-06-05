@@ -197,7 +197,7 @@ class Compiler {
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<ebi>$src</ebi>";
+            $src = "<bi-x>$src</bi-x>";
             $fragment = true;
         }
 
@@ -229,21 +229,25 @@ class Compiler {
         return !isset(static::$htmlTags[$tag]);
     }
 
-    protected function compileNode(DOMNode $node, CompilerBuffer $output) {
+    protected function compileNode(DOMNode $node, CompilerBuffer $out) {
+        if ($out->getNodeProp($node, 'skip')) {
+            return;
+        }
+
         switch ($node->nodeType) {
             case XML_TEXT_NODE:
-                $this->compileTextNode($node, $output);
+                $this->compileTextNode($node, $out);
                 break;
             case XML_ELEMENT_NODE:
                 /* @var \DOMElement $node */
-                $this->compileElementNode($node, $output);
+                $this->compileElementNode($node, $out);
                 break;
             case XML_COMMENT_NODE:
                 /* @var \DOMComment $node */
-                $this->compileCommentNode($node, $output);
+                $this->compileCommentNode($node, $out);
                 break;
             case XML_DOCUMENT_TYPE_NODE:
-                $output->echoCode($node->ownerDocument->saveHTML($node));
+                $out->echoCode($node->ownerDocument->saveHTML($node));
                 break;
             default:
                 $r = "// Unknown node\n".
@@ -289,53 +293,55 @@ class Compiler {
         return $result;
     }
 
-    protected function newline(DOMNode $node, $output) {
+    protected function newline(DOMNode $node, $out) {
         if ($node->previousSibling && $node->previousSibling->nodeType !== XML_COMMENT_NODE) {
-            $output->appendCode("\n");
+            $out->appendCode("\n");
         }
     }
 
-    protected function compileCommentNode(\DOMComment $node, CompilerBuffer $output) {
+    protected function compileCommentNode(\DOMComment $node, CompilerBuffer $out) {
         $comments = explode("\n", trim($node->nodeValue));
 
-        $this->newline($node, $output);
+        $this->newline($node, $out);
         foreach ($comments as $comment) {
-            $output->appendCode("// $comment\n");
+            $out->appendCode("// $comment\n");
         }
     }
 
-    protected function compileTextNode(DOMNode $node, CompilerBuffer $output) {
-        $items = $this->splitExpressions($node->nodeValue);
+    protected function compileTextNode(DOMNode $node, CompilerBuffer $out) {
+        $text = $this->ltrim($this->rtrim($node->nodeValue, $node, $out), $node, $out);
+
+        $items = $this->splitExpressions($text);
 
         foreach ($items as $i => list($text, $offset)) {
             if (preg_match('`^{\S`', $text)) {
-                $output->echoCode('htmlspecialchars('.$this->expr(substr($text, 1, -1), $output).')');
+                $out->echoCode('htmlspecialchars('.$this->expr(substr($text, 1, -1), $out).')');
             } else {
-                if ($i === 0) {
-                    $text = $this->ltrim($text, $node);
-                }
-                if ($i === count($items) - 1) {
-                    $text = $this->rtrim($text, $node);
-                }
+//                if ($i === 0) {
+//                    $text = $this->ltrim($text, $node, $out);
+//                }
+//                if ($i === count($items) - 1) {
+//                    $text = $this->rtrim($text, $node, $out);
+//                }
 
-                $output->echoLiteral($text);
+                $out->echoLiteral($text);
             }
         }
     }
 
-    protected function compileElementNode(DOMElement $node, CompilerBuffer $output) {
+    protected function compileElementNode(DOMElement $node, CompilerBuffer $out) {
         list($attributes, $special) = $this->splitAttributes($node);
 
         if (!empty($special) || $this->isComponent($node->tagName)) {
-            $this->compileSpecialNode($node, $attributes, $special, $output);
+            $this->compileSpecialNode($node, $attributes, $special, $out);
         } else {
-            $this->compileOpenTag($node, $node->attributes, $output);
+            $this->compileOpenTag($node, $node->attributes, $out);
 
             foreach ($node->childNodes as $childNode) {
-                $this->compileNode($childNode, $output);
+                $this->compileNode($childNode, $out);
             }
 
-            $this->compileCloseTag($node, $output);
+            $this->compileCloseTag($node, $out);
         }
     }
 
@@ -384,35 +390,35 @@ class Compiler {
         return [$attributes, $special];
     }
 
-    protected function compileSpecialNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
+    protected function compileSpecialNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $specialName = key($special);
 
         switch ($specialName) {
             case self::T_COMPONENT:
-                $this->compileComponentRegister($node, $attributes, $special, $output);
+                $this->compileComponentRegister($node, $attributes, $special, $out);
                 break;
             case self::T_IF:
-                $this->compileIf($node, $attributes, $special, $output);
+                $this->compileIf($node, $attributes, $special, $out);
                 break;
             case self::T_EACH:
-                $this->compileEach($node, $attributes, $special, $output);
+                $this->compileEach($node, $attributes, $special, $out);
                 break;
             case self::T_WITH:
                 if ($this->isComponent($node->tagName)) {
                     // With has a special meaning in components.
-                    $this->compileComponentInclude($node, $attributes, $special, $output);
+                    $this->compileComponentInclude($node, $attributes, $special, $out);
                 } else {
-                    $this->compileWith($node, $attributes, $special, $output);
+                    $this->compileWith($node, $attributes, $special, $out);
                 }
                 break;
             case self::T_LITERAL:
-                $this->compileLiteral($node, $attributes, $special, $output);
+                $this->compileLiteral($node, $attributes, $special, $out);
                 break;
             case '':
                 if ($this->isComponent($node->tagName)) {
-                    $this->compileComponentInclude($node, $attributes, $special, $output);
+                    $this->compileComponentInclude($node, $attributes, $special, $out);
                 } else {
-                    $this->compileElement($node, $attributes, $output);
+                    $this->compileElement($node, $attributes, $out);
                 }
                 break;
         }
@@ -469,7 +475,7 @@ class Compiler {
         $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr);\n");
     }
 
-    protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $output) {
+    protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
         // Don't double up comments.
         if ($node->previousSibling && $node->previousSibling->nodeType === XML_COMMENT_NODE) {
             return;
@@ -483,35 +489,35 @@ class Compiler {
         $str .= '>';
         $comments = explode("\n", $str);
         foreach ($comments as $comment) {
-            $output->appendCode("// $comment\n");
+            $out->appendCode("// $comment\n");
         }
     }
 
-    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $output) {
+    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $out) {
         if ($node->tagName === self::T_X) {
             return;
         }
 
-        $output->echoLiteral('<'.$node->tagName);
+        $out->echoLiteral('<'.$node->tagName);
 
         foreach ($attributes as $name => $attribute) {
             /* @var \DOMAttr $attribute */
-            $output->echoLiteral(' '.$name.'="');
+            $out->echoLiteral(' '.$name.'="');
 
             // Check for an attribute expression.
             if ($this->isExpression($attribute->value)) {
-                $output->echoCode('htmlspecialchars('.$this->expr(substr($attribute->value, 1, -1), $output, $attribute).')');
+                $out->echoCode('htmlspecialchars('.$this->expr(substr($attribute->value, 1, -1), $out, $attribute).')');
             } else {
-                $output->echoLiteral(htmlspecialchars($attribute->value));
+                $out->echoLiteral(htmlspecialchars($attribute->value));
             }
 
-            $output->echoLiteral('"');
+            $out->echoLiteral('"');
         }
 
         if ($node->hasChildNodes()) {
-            $output->echoLiteral('>');
+            $out->echoLiteral('>');
         } else {
-            $output->echoLiteral(" />");
+            $out->echoLiteral(" />");
         }
     }
 
@@ -519,138 +525,154 @@ class Compiler {
         return preg_match('`^{\S.*}$`', $value);
     }
 
-    protected function compileCloseTag(DOMElement $node, CompilerBuffer $output) {
+    protected function compileCloseTag(DOMElement $node, CompilerBuffer $out) {
         if ($node->hasChildNodes() && $node->tagName !== self::T_X) {
-            $output->echoLiteral("</{$node->tagName}>");
+            $out->echoLiteral("</{$node->tagName}>");
         }
     }
 
-    protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
-        $this->compileTagComment($node, $attributes, $special, $output);
-        $expr = $this->expr($special[self::T_IF]->value, $output);
+    protected function isEmptyText(DOMNode $node) {
+        return $node instanceof \DOMText && empty(trim($node->data));
+    }
+
+    protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $this->compileTagComment($node, $attributes, $special, $out);
+        $expr = $this->expr($special[self::T_IF]->value, $out);
         unset($special[self::T_IF]);
 
-        $output->appendCode('if ('.$expr.") {\n");
-        $output->indent(+1);
+        $elseNode = $this->findSpecialNode($node, self::T_ELSE, self::T_IF);
+        $out->setNodeProp($elseNode, 'skip', true);
 
-        $this->compileSpecialNode($node, $attributes, $special, $output);
+        $out->appendCode('if ('.$expr.") {\n");
+        $out->indent(+1);
 
-        $output->indent(-1);
+        $this->compileSpecialNode($node, $attributes, $special, $out);
 
-        if (null !== $elseNode = $this->findElseNode($node)) {
-            $elseNode->compiled = true;
+        $out->indent(-1);
+
+        if ($elseNode) {
             list($attributes, $special) = $this->splitAttributes($elseNode);
             unset($special[self::T_ELSE]);
 
-            $output->appendCode("} else {\n");
+            $out->appendCode("} else {\n");
 
-            $output->indent(+1);
-            $this->compileSpecialNode($elseNode, $attributes, $special, $output);
-            $output->indent(-1);
+            $out->indent(+1);
+            $this->compileSpecialNode($elseNode, $attributes, $special, $out);
+            $out->indent(-1);
         }
 
-        $output->appendCode("}\n");
+        $out->appendCode("}\n");
     }
 
-    protected function compileEach(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
-        $this->compileTagComment($node, $attributes, $special, $output);
-        $this->compileOpenTag($node, $attributes, $output);
+    protected function compileEach(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $this->compileTagComment($node, $attributes, $special, $out);
+        $this->compileOpenTag($node, $attributes, $out);
 
-        if (null === $emptyNode = $this->findEmptyNode($node)) {
-            $this->compileEachLoop($node, $attributes, $special, $output);
+        $emptyNode = $this->findSpecialNode($node, self::T_EMPTY, self::T_ELSE);
+        $out->setNodeProp($emptyNode, 'skip', true);
+
+        if ($emptyNode === null) {
+            $this->compileEachLoop($node, $attributes, $special, $out);
         } else {
-            $expr = $this->expr("empty({$special[self::T_EACH]->value})", $output);
+            $expr = $this->expr("empty({$special[self::T_EACH]->value})", $out);
 
             list ($emptyAttributes, $emptySpecial) = $this->splitAttributes($emptyNode);
             unset($emptySpecial[self::T_EMPTY]);
 
-            $output->appendCode('if ('.$expr.") {\n");
+            $out->appendCode('if ('.$expr.") {\n");
 
-            $output->indent(+1);
-            $this->compileSpecialNode($emptyNode, $emptyAttributes, $emptySpecial, $output);
-            $output->indent(-1);
+            $out->indent(+1);
+            $this->compileSpecialNode($emptyNode, $emptyAttributes, $emptySpecial, $out);
+            $out->indent(-1);
 
-            $output->appendCode("} else {\n");
+            $out->appendCode("} else {\n");
 
-            $output->indent(+1);
-            $this->compileEachLoop($node, $attributes, $special, $output);
-            $output->indent(-1);
+            $out->indent(+1);
+            $this->compileEachLoop($node, $attributes, $special, $out);
+            $out->indent(-1);
 
-            $output->appendCode("}\n");
+            $out->appendCode("}\n");
         }
 
-        $this->compileCloseTag($node, $output);
+        $this->compileCloseTag($node, $out);
     }
 
-    protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
-        $this->compileTagComment($node, $attributes, $special, $output);
-        $with = $this->expr($special[self::T_WITH]->value, $output);
+    protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $this->compileTagComment($node, $attributes, $special, $out);
+        $with = $this->expr($special[self::T_WITH]->value, $out);
         unset($special[self::T_WITH]);
 
-        $output->depth(+1);
-        $output->pushScope(['this' => $output->depthName('props')]);
-        $output->appendCode('$'.$output->depthName('props')." = $with;\n");
+        $out->depth(+1);
+        $out->pushScope(['this' => $out->depthName('props')]);
+        $out->appendCode('$'.$out->depthName('props')." = $with;\n");
 
-        $this->compileSpecialNode($node, $attributes, $special, $output);
+        $this->compileSpecialNode($node, $attributes, $special, $out);
 
-        $output->depth(-1);
-        $output->popScope();
+        $out->depth(-1);
+        $out->popScope();
     }
 
-    protected function compileLiteral(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
-        $this->compileTagComment($node, $attributes, $special, $output);
+    protected function compileLiteral(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $this->compileTagComment($node, $attributes, $special, $out);
         unset($special[self::T_LITERAL]);
 
-        $this->compileOpenTag($node, $attributes, $output);
+        $this->compileOpenTag($node, $attributes, $out);
 
         foreach ($node->childNodes as $childNode) {
             $html = $childNode->ownerDocument->saveHTML($childNode);
-            $output->echoLiteral($html);
+            $out->echoLiteral($html);
         }
 
-        $this->compileCloseTag($node, $output);
+        $this->compileCloseTag($node, $out);
     }
 
-    protected function compileElement(DOMElement $node, array $attributes, CompilerBuffer $output) {
-        $this->compileOpenTag($node, $attributes, $output);
+    protected function compileElement(DOMElement $node, array $attributes, CompilerBuffer $out) {
+        $this->compileOpenTag($node, $attributes, $out);
 
         foreach ($node->childNodes as $childNode) {
-            $this->compileNode($childNode, $output);
+            $this->compileNode($childNode, $out);
         }
 
-        $this->compileCloseTag($node, $output);
+        $this->compileCloseTag($node, $out);
     }
 
-    protected function findElseNode(DOMElement $ifNode) {
-        for ($node = $ifNode->nextSibling; $node !== null; $node = $node->nextSibling) {
-            switch ($node->nodeType) {
-                case XML_TEXT_NODE:
-                    /* @var \DOMText $node */
-                    if (empty(trim($node->data))) {
-                        continue;
-                    } else {
-                        return null;
-                    }
-                    break;
-                case XML_ELEMENT_NODE:
-                    if ($node->hasAttribute(self::T_ELSE)) {
-                        return $node;
-                    } else {
-                        return null;
-                    }
-                default:
-                    return null;
+    /**
+     * Find a special node in relation to another node.
+     *
+     * This method is used to find things such as bi-empty and bi-else elements.
+     *
+     * @param DOMElement $node The node to search in relation to.
+     * @param string $attribute The name of the attribute to search for.
+     * @param string $parentAttribute The name of the parent attribute to resolve conflicts.
+     * @return DOMElement|null Returns the found element node or **null** if not found.
+     */
+    protected function findSpecialNode(DOMElement $node, $attribute, $parentAttribute) {
+        // First look for a sibling after the node.
+        for ($sibNode = $node->nextSibling; $sibNode !== null; $sibNode = $sibNode->nextSibling) {
+            if ($sibNode instanceof DOMElement && $sibNode->hasAttribute($attribute)) {
+                return $sibNode;
             }
-        }
-        return null;
-    }
 
-    protected function findEmptyNode(DOMElement $eachNode) {
-        foreach ($eachNode->childNodes as $node) {
-            if ($node instanceof DOMElement && $node->hasAttribute(self::T_EMPTY)) {
-                return $node;
+            // Stop searching if we encounter another node.
+            if (!$this->isEmptyText($sibNode)) {
+                break;
             }
         }
+
+        // Next look inside the node.
+        $parentFound = false;
+        foreach ($node->childNodes as $childNode) {
+            if (!$parentFound && $childNode instanceof DOMElement && $childNode->hasAttribute($attribute)) {
+                return $childNode;
+            }
+
+            if ($childNode instanceof DOMElement) {
+                $parentFound = $childNode->hasAttribute($parentAttribute);
+            } elseif ($childNode instanceof \DOMText && !empty(trim($childNode->data))) {
+                $parentFound = false;
+            }
+        }
+
         return null;
     }
 
@@ -658,13 +680,13 @@ class Compiler {
      * @param DOMElement $node
      * @param array $attributes
      * @param array $special
-     * @param CompilerBuffer $output
+     * @param CompilerBuffer $out
      */
-    private function compileEachLoop(DOMElement $node, array $attributes, array $special, CompilerBuffer $output) {
-        $each = $this->expr($special[self::T_EACH]->value, $output);
+    private function compileEachLoop(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $each = $this->expr($special[self::T_EACH]->value, $out);
         unset($special[self::T_EACH]);
 
-        $as = [$output->depthName('i', 1), $output->depthName('props', 1)];
+        $as = [$out->depthName('i', 1), $out->depthName('props', 1)];
         $scope = ['this' => $as[1]];
         if (!empty($special[self::T_AS])) {
             if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`', $special[self::T_AS]->value, $m)) {
@@ -675,44 +697,61 @@ class Compiler {
             }
         }
         unset($special[self::T_AS]);
-        $output->appendCode("foreach ($each as \${$as[0]} => \${$as[1]}) {\n");
-        $output->depth(+1);
-        $output->indent(+1);
-        $output->pushScope($scope);
+        $out->appendCode("foreach ($each as \${$as[0]} => \${$as[1]}) {\n");
+        $out->depth(+1);
+        $out->indent(+1);
+        $out->pushScope($scope);
 
         foreach ($node->childNodes as $childNode) {
-            $this->compileNode($childNode, $output);
+            $this->compileNode($childNode, $out);
         }
 
-        $output->indent(-1);
-        $output->depth(-1);
-        $output->popScope();
-        $output->appendCode("}\n");
+        $out->indent(-1);
+        $out->depth(-1);
+        $out->popScope();
+        $out->appendCode("}\n");
     }
 
-    protected function ltrim($text, \DOMNode $node) {
+    protected function ltrim($text, \DOMNode $node, CompilerBuffer $out) {
         if ($this->inPre($node)) {
             return $text;
         }
 
         $sib = $node->previousSibling ?: $node->parentNode;
-
-        if ($sib !== null && ($sib->nodeType === XML_COMMENT_NODE || in_array($sib->tagName, static::$blocks))) {
+        if ($sib === null || !$sib instanceof \DOMElement || $out->getNodeProp($sib, 'skip') || $sib->tagName === self::T_X) {
             return ltrim($text);
         }
+
+        $text = preg_replace('`^\s*\n\s*`', "\n", $text, -1, $count);
+        if ($count === 0) {
+            $text = preg_replace('`^\s+`', ' ', $text);
+        }
+
+//        if ($sib !== null && ($sib->nodeType === XML_COMMENT_NODE || in_array($sib->tagName, static::$blocks))) {
+//            return ltrim($text);
+//        }
         return $text;
     }
 
-    protected function rtrim($text, \DOMNode $node) {
+    protected function rtrim($text, \DOMNode $node, CompilerBuffer $out) {
         if ($this->inPre($node)) {
             return $text;
         }
 
         $sib = $node->nextSibling ?: $node->parentNode;
 
-        if ($sib !== null && ($sib->nodeType === XML_COMMENT_NODE || in_array($sib->tagName, static::$blocks))) {
+        if ($sib === null || !$sib instanceof \DOMElement || $out->getNodeProp($sib, 'skip') || $sib->tagName === self::T_X) {
             return rtrim($text);
         }
+
+        $text = preg_replace('`\s*\n\s*$`', "\n", $text, -1, $count);
+        if ($count === 0) {
+            $text = preg_replace('`\s+$`', ' ', $text);
+        }
+
+//        if ($sib !== null && ($sib->nodeType === XML_COMMENT_NODE || in_array($sib->tagName, static::$blocks))) {
+//            return rtrim($text);
+//        }
         return $text;
     }
 

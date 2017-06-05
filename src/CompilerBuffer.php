@@ -28,8 +28,14 @@ class CompilerBuffer {
 
     private $style = self::STYLE_REGISTER;
 
+    /**
+     * @var \SplObjectStorage
+     */
+    private $nodeProps;
+
     public function __construct() {
         $this->buffers = ['' => new ComponentBuffer()];
+        $this->nodeProps = new \SplObjectStorage();
         $this->select('');
     }
 
@@ -150,6 +156,26 @@ class CompilerBuffer {
      */
     public function setBasename($basename) {
         $this->basename = $basename;
+        return $this;
+    }
+
+    public function getNodeProp(\DOMNode $node, $name, $default = null) {
+        if (!$this->nodeProps->contains($node) || !array_key_exists($name, $this->nodeProps[$node])) {
+            return $default;
+        }
+        return $this->nodeProps[$node][$name];
+    }
+
+    public function setNodeProp(\DOMNode $node = null, $name, $value) {
+        if ($node === null) {
+            return;
+        }
+
+        if (!$this->nodeProps->contains($node)) {
+            $this->nodeProps->attach($node, [$name => $value]);
+        }
+
+        $this->nodeProps[$node] = [$name => $value] + $this->nodeProps[$node];
         return $this;
     }
 }

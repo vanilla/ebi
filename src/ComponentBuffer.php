@@ -102,7 +102,7 @@ class ComponentBuffer {
     public function flush() {
         $this->flushEcho();
 
-        $result = "function (\$props = [], \$children = []) {\n{$this->buffer}\n}";
+        $result = "function (\$props = [], \$children = []) {\n{$this->buffer}}";
 
         return $result;
     }
