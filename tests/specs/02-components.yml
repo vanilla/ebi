@@ -16,3 +16,12 @@ tests:
         template: >
           <div bi-component="foo">Hello {name}{punc ?: "!"}</div><foo bi-with="child" punc="?" />
         expected: <div>Hello Frank?</div>
+  - name: bi-children
+    template: >
+      <div bi-component="page"><h1 bi-children/></div><page>Hello {name}!</page>
+    data: {name: 'Sam'}
+    expected: <div><h1>Hello Sam!</h1></div>
+    tests:
+      - name: named child
+        template: >
+          <page><bi-x bi-block="greet">Hello {name}!</bi-x></page><div bi-component="page"><h1 bi-children="greet" /></div>

@@ -33,7 +33,6 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     public function renderFixture($component, $data) {
         $ebi = new Ebi(new FilesystemLoader(__DIR__.'/fixtures'), __DIR__.'/cache/fixtures');
 
-
         $rendered = $ebi->render($component, $data);
 
         $renderedPath = __DIR__."/cache/fixtures/rendered/$component";
@@ -46,7 +45,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-//        if ($name !== '01-language bi-if else true') {
+//        if ($name !== '02-components bi-children') {
 //            return;
 //        }
 

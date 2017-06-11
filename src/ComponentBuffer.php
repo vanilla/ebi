@@ -102,8 +102,15 @@ class ComponentBuffer {
     public function flush() {
         $this->flushEcho();
 
-        $result = "function (\$props = [], \$children = []) {\n{$this->buffer}}";
+        return $this->buffer;
+    }
 
-        return $result;
+    /**
+     * Get the indent.
+     *
+     * @return int Returns the indent.
+     */
+    public function getIndent() {
+        return $this->indent;
     }
 }

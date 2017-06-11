@@ -24,7 +24,16 @@ class Compiler {
     const T_X = 'bi-x';
 
     protected static $special = [
-        self::T_COMPONENT => 1, self::T_IF => 2, self::T_ELSE => 3, self::T_EACH => 4, self::T_AS => 5, self::T_EMPTY => 6, self::T_WITH => 7, self::T_LITERAL => 8
+        self::T_COMPONENT => 1,
+        self::T_IF => 2,
+        self::T_ELSE => 3,
+        self::T_EACH => 4,
+        self::T_AS => 5,
+        self::T_EMPTY => 6,
+        self::T_CHILDREN => 8,
+        self::T_WITH => 8,
+        self::T_BLOCK => 9,
+        self::T_LITERAL => 10
     ];
 
     protected static $htmlTags = [
@@ -52,7 +61,7 @@ class Compiler {
         'button' => 'i',
         'canvas' => 'b',
         'caption' => 'i',
-//        'center' => 'i',
+//        'center' => 'b',
         'cite' => 'i',
         'code' => 'i',
         'col' => 'i',
@@ -207,8 +216,14 @@ class Compiler {
 
         $out = new CompilerBuffer();
 
-        $out->setBasename($options['basename'])
-            ->setStyle($options['runtime'] ? CompilerBuffer::STYLE_REGISTER : CompilerBuffer::STYLE_FUNCTION);
+        $out->setBasename($options['basename']);
+
+        if ($options['runtime']) {
+            $name = var_export($options['basename'], true);
+            $out->appendCode("\$this->register($name, function (\$props = [], \$children = []) {\n");
+        } else {
+            $out->appendCode("function (\$props = [], \$children = []) {\n");
+        }
 
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
@@ -221,6 +236,12 @@ class Compiler {
 
         $out->indent(-1);
         $out->popScope();
+
+        if ($options['runtime']) {
+            $out->appendCode("\n});");
+        } else {
+            $out->appendCode("\n};");
+        }
 
         $r = $out->flush();
         return $r;
@@ -294,7 +315,7 @@ class Compiler {
         return $result;
     }
 
-    protected function newline(DOMNode $node, $out) {
+    protected function newline(DOMNode $node, CompilerBuffer $out) {
         if ($node->previousSibling && $node->previousSibling->nodeType !== XML_COMMENT_NODE) {
             $out->appendCode("\n");
         }
@@ -408,6 +429,12 @@ class Compiler {
             case self::T_EACH:
                 $this->compileEach($node, $attributes, $special, $out);
                 break;
+            case self::T_BLOCK:
+                $this->compileBlock($node, $attributes, $special, $out);
+                break;
+            case self::T_CHILDREN:
+                $this->compileChildBlock($node, $attributes, $special, $out);
+                break;
             case self::T_WITH:
                 if ($this->isComponent($node->tagName)) {
                     // With has a special meaning in components.
@@ -442,6 +469,9 @@ class Compiler {
         unset($special[self::T_COMPONENT]);
 
         $prev = $out->select($name);
+
+        $varName = var_export($name, true);
+        $out->appendCode("\$this->register($varName, function (\$props = [], \$children = []) {\n");
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
 
@@ -450,8 +480,31 @@ class Compiler {
         } finally {
             $out->popScope();
             $out->indent(-1);
+            $out->appendCode("\n});");
             $out->select($prev);
         }
+    }
+
+    private function compileBlock(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $name = strtolower($special[self::T_BLOCK]->value);
+        unset($special[self::T_BLOCK]);
+
+        $prev = $out->select($name);
+
+        $out->appendCode("function () use (\$props, \$children) {\n");
+        $out->pushScope(['this' => 'props']);
+        $out->indent(+1);
+
+        try {
+            $this->compileSpecialNode($node, $attributes, $special, $out);
+        } finally {
+            $out->indent(-1);
+            $out->popScope();
+            $out->appendCode("}");
+            $out->select($prev);
+        }
+
+        return $out;
     }
 
     /**
@@ -487,7 +540,39 @@ class Compiler {
             $propsStr = $this->expr('this', $out);
         }
 
-        $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr);\n");
+        // Compile the children blocks.
+        $blocks = $this->compileComponentBlocks($node, $out);
+        $blocksStr = $blocks->flush();
+
+        $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr, $blocksStr);\n");
+    }
+
+    /**
+     * @param DOMElement $parent
+     * @return CompilerBuffer
+     */
+    protected function compileComponentBlocks(DOMElement $parent, CompilerBuffer $out) {
+        $blocksOut = new CompilerBuffer(CompilerBuffer::STYLE_ARRAY, $out->getIndent());
+
+        if ($this->isEmptyNode($parent)) {
+            return $blocksOut;
+        }
+
+        $blocksOut->appendCode("function () use (\$props, \$children) {\n");
+        $blocksOut->pushScope(['this' => 'props']);
+        $blocksOut->indent(+1);
+
+        try {
+            foreach ($parent->childNodes as $node) {
+                $this->compileNode($node, $blocksOut);
+            }
+        } finally {
+            $blocksOut->indent(-1);
+            $blocksOut->popScope();
+            $blocksOut->appendCode("}");
+        }
+
+        return $blocksOut;
     }
 
     protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
@@ -508,7 +593,7 @@ class Compiler {
         }
     }
 
-    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $out) {
+    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $out, $force = false) {
         if ($node->tagName === self::T_X) {
             return;
         }
@@ -529,7 +614,7 @@ class Compiler {
             $out->echoLiteral('"');
         }
 
-        if ($node->hasChildNodes()) {
+        if ($node->hasChildNodes() || $force) {
             $out->echoLiteral('>');
         } else {
             $out->echoLiteral(" />");
@@ -540,14 +625,31 @@ class Compiler {
         return preg_match('`^{\S.*}$`', $value);
     }
 
-    protected function compileCloseTag(DOMElement $node, CompilerBuffer $out) {
-        if ($node->hasChildNodes() && $node->tagName !== self::T_X) {
+    protected function compileCloseTag(DOMElement $node, CompilerBuffer $out, $force = false) {
+        if (($force || $node->hasChildNodes()) && $node->tagName !== self::T_X) {
             $out->echoLiteral("</{$node->tagName}>");
         }
     }
 
     protected function isEmptyText(DOMNode $node) {
         return $node instanceof \DOMText && empty(trim($node->data));
+    }
+
+    protected function isEmptyNode(DOMNode $node) {
+        if (!$node->hasChildNodes()) {
+            return true;
+        }
+
+        foreach ($node->childNodes as $childNode) {
+            if ($childNode instanceof DOMElement) {
+                return false;
+            }
+            if ($childNode instanceof \DOMText && !$this->isEmptyText($childNode)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
@@ -777,5 +879,24 @@ class Compiler {
             }
         }
         return false;
+    }
+
+    private function compileChildBlock(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        /* @var \DOMAttr $child */
+        $child = $special[self::T_CHILDREN];
+        unset($special[self::T_CHILDREN]);
+
+        $key = $child->value === '' ? 0 : $child->value;
+        $keyStr = var_export($key, true);
+
+        $this->compileOpenTag($node, $attributes, $out, true);
+
+        $out->appendCode("if (isset(\$children[{$keyStr}])) {\n");
+        $out->indent(+1);
+        $out->appendCode("\$children[{$keyStr}]();\n");
+        $out->indent(-1);
+        $out->appendCode("}\n");
+
+        $this->compileCloseTag($node, $out, true);
     }
 }

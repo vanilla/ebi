@@ -9,8 +9,8 @@ namespace Ebi;
 
 
 class CompilerBuffer {
-    const STYLE_FUNCTION = 'return';
-    const STYLE_REGISTER = 'register';
+    const STYLE_JOIN = 'join';
+    const STYLE_ARRAY = 'array';
 
     /**
      * @var ComponentBuffer[]
@@ -26,16 +26,23 @@ class CompilerBuffer {
 
     private $basename;
 
-    private $style = self::STYLE_REGISTER;
+    private $style = self::STYLE_JOIN;
+
+    /**
+     * @var int
+     */
+    private $baseIndent = 0;
 
     /**
      * @var \SplObjectStorage
      */
     private $nodeProps;
 
-    public function __construct() {
-        $this->buffers = ['' => new ComponentBuffer()];
+    public function __construct($style = self::STYLE_JOIN, $baseIndent = 0) {
+        $this->buffers = [];
         $this->nodeProps = new \SplObjectStorage();
+        $this->style = $style;
+        $this->baseIndent = $baseIndent;
         $this->select('');
     }
 
@@ -48,7 +55,10 @@ class CompilerBuffer {
         $this->currentName = $component;
 
         if (!array_key_exists($component, $this->buffers)) {
-            $this->buffers[$component] = new ComponentBuffer();
+            $this->buffers[$component] = $buffer = new ComponentBuffer();
+            if ($this->getStyle() === self::STYLE_ARRAY) {
+                $buffer->indent($this->getBaseIndent() + 1);
+            }
         }
 
         $this->current =& $this->buffers[$component];
@@ -93,30 +103,46 @@ class CompilerBuffer {
     }
 
     public function flush() {
+        switch ($this->getStyle()) {
+            case self::STYLE_ARRAY:
+                return $this->flushArray();
+            default:
+                return $this->flushJoin();
+        }
+    }
+
+    private function flushJoin() {
+        return implode("\n\n", array_map(function ($buffer) {
+            /* @var ComponentBuffer $buffer */
+            return $buffer->flush();
+        }, $this->buffers));
+    }
+
+    private function flushArray() {
         $result = [];
 
         foreach ($this->buffers as $name => $buffer) {
-            if ($this->getStyle() === self::STYLE_FUNCTION && empty($name)) {
-                // Render the component return last.
+            $flushed = $buffer->flush();
+            if (empty($flushed)) {
                 continue;
             }
 
-            if (empty($name)) {
-                $component = $this->basename;
-            } elseif ($name[0] === '.') {
-                $component = trim($this->basename.$name, '.');
+            if ($name === '') {
+                $result[] = $flushed;
             } else {
-                $component = $name;
+                $result[] = var_export($name, true).' => '.$flushed;
             }
-
-            $result[] = '$this->register('.var_export($component, true).', '.$buffer->flush().');';
         }
 
-        if ($this->getStyle() === self::STYLE_FUNCTION) {
-            $result[] = $this->buffers['']->flush().';';
+        if (empty($result)) {
+            return '[]';
+        } else {
+            return "[\n".implode(",\n\n", $result)."\n".$this->px().']';
         }
+    }
 
-        return implode("\n\n", $result);
+    protected function px($add = 0) {
+        return str_repeat(' ', ($this->baseIndent + $add) * 4);
     }
 
     /**
@@ -176,6 +202,30 @@ class CompilerBuffer {
         }
 
         $this->nodeProps[$node] = [$name => $value] + $this->nodeProps[$node];
+        return $this;
+    }
+
+    /**
+     * Get the baseIndent.
+     *
+     * @return int Returns the baseIndent.
+     */
+    public function getBaseIndent() {
+        return $this->baseIndent;
+    }
+
+    public function getIndent() {
+        return $this->current->getIndent();
+    }
+
+    /**
+     * Set the baseIndent.
+     *
+     * @param int $baseIndent
+     * @return $this
+     */
+    public function setBaseIndent($baseIndent) {
+        $this->baseIndent = $baseIndent;
         return $this;
     }
 }
