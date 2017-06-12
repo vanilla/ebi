@@ -19,6 +19,12 @@ class Ebi {
      */
     private $componentLoader;
 
+    /**
+     * Ebi constructor.
+     *
+     * @param TemplateLoaderInterface $templateLoader Used to load template sources from component names.
+     * @param string $cachePath The path to cache compiled templates.
+     */
     public function __construct(TemplateLoaderInterface $templateLoader, $cachePath) {
         $this->componentLoader = new CompilingLoader($templateLoader, $cachePath);
     }
@@ -26,23 +32,30 @@ class Ebi {
     /**
      * Write a component to the output buffer.
      *
-     * @param string $name The name of the component.
+     * @param string $component The name of the component.
      * @param array ...$args
      */
-    public function write($name, ...$args) {
-        $name = strtolower($name);
-        if ($component = $this->lookup($name)) {
-            call_user_func($component, ...$args);
+    public function write($component, ...$args) {
+        $component = strtolower($component);
+        if ($callback = $this->lookup($component)) {
+            call_user_func($callback, ...$args);
         } else {
-            trigger_error("Could not find component $name.", E_USER_NOTICE);
+            trigger_error("Could not find component $component.", E_USER_NOTICE);
         }
     }
 
+    /**
+     * Render a component to a string.
+     *
+     * @param string $component The name of the component to render.
+     * @param array ...$args Arguments to pass to the component.
+     * @return string|null Returns the rendered component or **null** if the component was not found.
+     */
     public function render($component, ...$args) {
-        if ($component = $this->lookup($component)) {
+        if ($callback = $this->lookup($component)) {
             ob_start();
             $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
-            call_user_func($component, ...$args);
+            call_user_func($callback, ...$args);
             error_reporting($errs);
             $str = ob_get_clean();
             return $str;
@@ -52,6 +65,12 @@ class Ebi {
         }
     }
 
+    /**
+     * Lookup a component with a given name.
+     *
+     * @param string $component The component to lookup.
+     * @return callable|null Returns the component function or **null** if the component is not found.
+     */
     public function lookup($component) {
         $component = strtolower($component);
 
@@ -66,10 +85,24 @@ class Ebi {
         }
     }
 
+    /**
+     * Register a component.
+     *
+     * @param string $name The name of the component to register.
+     * @param callable $component The component function.
+     */
     public function register($name, callable $component) {
         $this->components[$name] = $component;
     }
 
+    /**
+     * Include a file.
+     *
+     * This is method is useful for including a file bound to this object instance.
+     *
+     * @param string $path The path to the file to include.
+     * @return mixed Returns the result of the include.
+     */
     public function requireFile($path) {
         return require $path;
     }
@@ -98,6 +131,14 @@ class Ebi {
         }
     }
 
+    /**
+     * Format a data.
+     *
+     * @param mixed $date The date to format. This can be a string data, a timestamp or an instance of **DateTimeInterface**.
+     * @param string $format The format of the date.
+     * @return string Returns the formatted data.
+     * @see date_format()
+     */
     public function dateFormat($date, $format = 'c') {
         if (is_string($date)) {
             try {

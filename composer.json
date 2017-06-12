@@ -1,6 +1,6 @@
 {
 	"name": "vanilla/ebi",
-	"description": "A lightweight template engine.",
+	"description": "A template engine made with HTML.",
 	"license": "MIT",
 	"authors": [
 		{

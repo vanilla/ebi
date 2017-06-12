@@ -1,7 +1,5 @@
 ## The Ebi Template Language
 
-*HTML Attribute Template Markup Language*
-
 The Ebi template language uses basic HTML and special attributes for a simple yet powerful template language.
 
 ## The Basics of a Template
@@ -189,6 +187,15 @@ if ($props['signedIn']) {
 }
 ```
 
+## Components
+
+Components are a powerful part of Ebi. With components you can make re-usable templates that can be included in other templates. Here are some component basics:
+
+- Each template is a component. You can declare additional components in a template too.
+- Components are lowercase. It is recommended that you use dashes to separate words in component names. Make sure to name your template files in lowercase to avoid issues with case sensitive file systems.
+- Components are used by declaring an HTML element with the component's name. Components create custom tags!
+- You can pass data into components with contributes. If you want to pass all of the current template's data into a component use the `bi-with` attribute.
+
 ### bi-component
 
 Define a component that can be used later in the template.
@@ -311,3 +318,20 @@ return function ($data) {
     echo '<p>wut!?</p>';
 };
 ```
+
+## Using Ebi in Code
+
+The **Ebi** class is used to compile and render Ebi templates. You should only need one instance of the class to render any number of templates.
+
+### Basic usage.
+
+```php
+$ebi = new Ebi(
+    new FilesystemLoader('/path/to/templates'),
+    '/path/to/cache'
+);
+
+$ebi->write('component', $data);
+```
+
+In this example an **Ebi** object is constructed and a basic component is written to the output.
