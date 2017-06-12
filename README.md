@@ -6,8 +6,6 @@ The Ebi template language uses basic HTML and special attributes for a simple ye
 
 In general you write normal HTML. Data is included in the template by including it between `{...}`. Other special functionality is added via special template attributes.
 
-## Data Interpolation
-
 Data is included in a template by putting it between `{...}` braces. This is known as "interpolation" and there are quite a few options.
 
 ### Fields
@@ -25,6 +23,25 @@ This will include the "firstName" and "lastName" database keys. You can access d
 ```
 
 ### Functions
+
+Functions are called using the `functionName()` syntax. The following functions are included by default:
+
+| function   | description
+|------------|-------------
+| count      | Count the number of items in an array. 
+| empty      | Check to see if a string or array is empty.
+| join       | Join the elements of an array into a string. 
+| lcase      | Lowercase a string.
+| ucase      | Uppercase a string.
+| lcfirst    | Lowercase the first letter of a word.
+| ucfirst    | Uppercase the first letter of a word.
+| ucwords    | Uppercase the first letter in each word of a string.
+| ltrim      | Left trim a string.
+| rtrim      | Right trim a string.
+| trim       | Trim a string.
+| sprintf    | Return a formatted string.
+| substr     | Return a part of a string.
+| dateFormat | Format a date.
 
 ### Unescaping Data
 

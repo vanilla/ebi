@@ -45,8 +45,8 @@ class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\Expressio
         $this->registerFunction('empty');
         $this->registerFunction('implode');
         $this->registerFunction('lcfirst');
-        $this->registerFunction('strtolower');
-        $this->registerFunction('strtoupper');
+        $this->registerFunction('lcase', $this->nameMapCompiler('strtolower'));
+        $this->registerFunction('ucase', $this->nameMapCompiler('strtoupper'));
         $this->registerFunction('ucfirst');
         $this->registerFunction('ucwords');
         $this->registerFunction('ltrim');
@@ -61,6 +61,12 @@ class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\Expressio
         $this->registerFunction('@class', function ($expr) {
             return "\$this->cssClass($expr)";
         });
+    }
+
+    public function nameMapCompiler($phpName) {
+        return function ($expr) use ($phpName) {
+            return "$phpName($expr)";
+        };
     }
 
     /**
