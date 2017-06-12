@@ -45,9 +45,9 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-//        if ($name !== '02-components bi-children nested') {
-//            return;
-//        }
+        if ($name !== '02-components bi-component bi-include') {
+            return;
+        }
 
         $loader = new TestTemplateLoader();
         $ebi = new Ebi($loader, __DIR__.'/cache/specs');

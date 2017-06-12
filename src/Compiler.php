@@ -7,6 +7,7 @@
 
 namespace Ebi;
 
+use DOMAttr;
 use DOMElement;
 use DOMNode;
 
@@ -22,6 +23,7 @@ class Compiler {
     const T_ELSE = 'bi-else';
     const T_EMPTY = 'bi-empty';
     const T_X = 'x';
+    const T_INCLUDE = 'bi-include';
 
     protected static $special = [
         self::T_COMPONENT => 1,
@@ -31,9 +33,10 @@ class Compiler {
         self::T_AS => 5,
         self::T_EMPTY => 6,
         self::T_CHILDREN => 8,
-        self::T_WITH => 8,
-        self::T_BLOCK => 9,
-        self::T_LITERAL => 10
+        self::T_INCLUDE => 9,
+        self::T_WITH => 10,
+        self::T_BLOCK => 11,
+        self::T_LITERAL => 12
     ];
 
     protected static $htmlTags = [
@@ -376,7 +379,7 @@ class Compiler {
         return $values;
     }
 
-    protected function expr($expr, CompilerBuffer $output, \DOMAttr $attr = null) {
+    protected function expr($expr, CompilerBuffer $output, DOMAttr $attr = null) {
         $names = $output->getScopeVariables();
 
         $compiled = $this->expressions->compile($expr, function ($name) use ($names) {
@@ -434,6 +437,9 @@ class Compiler {
                 break;
             case self::T_CHILDREN:
                 $this->compileChildBlock($node, $attributes, $special, $out);
+                break;
+            case self::T_INCLUDE:
+                $this->compileComponentInclude($node, $attributes, $special, $out);
                 break;
             case self::T_WITH:
                 if ($this->isComponent($node->tagName)) {
@@ -513,15 +519,15 @@ class Compiler {
      * Compile component inclusion and rendering.
      *
      * @param DOMElement $node
-     * @param $attributes
-     * @param $special
+     * @param DOMAttr[] $attributes
+     * @param DOMAttr[] $special
      * @param CompilerBuffer $out
      */
     protected function compileComponentInclude(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         // Generate the attributes into a property array.
         $props = [];
         foreach ($attributes as $name => $attribute) {
-            /* @var \DOMAttr $attr */
+            /* @var DOMAttr $attr */
             if ($this->isExpression($attribute->value)) {
                 $expr = $this->expr(substr($attribute->value, 1, -1), $out, $attribute);
             } else {
@@ -546,7 +552,13 @@ class Compiler {
         $blocks = $this->compileComponentBlocks($node, $out);
         $blocksStr = $blocks->flush();
 
-        $out->appendCode('$this->write('.var_export($node->tagName, true).", $propsStr, $blocksStr);\n");
+        if (isset($special[self::T_INCLUDE])) {
+            $name = $this->expr($special[self::T_INCLUDE]->value, $out, $special[self::T_INCLUDE]);
+        } else {
+            $name = var_export($node->tagName, true);
+        }
+
+        $out->appendCode("\$this->write($name, $propsStr, $blocksStr);\n");
     }
 
     /**
@@ -590,7 +602,7 @@ class Compiler {
 
         $str = '<'.$node->tagName;
         foreach ($special as $attr) {
-            /* @var \DOMAttr $attr */
+            /* @var DOMAttr $attr */
             $str .= ' '.$attr->name.(empty($attr->value) ? '' : '="'.htmlspecialchars($attr->value).'"');
         }
         $str .= '>';
@@ -608,7 +620,7 @@ class Compiler {
         $out->echoLiteral('<'.$node->tagName);
 
         foreach ($attributes as $name => $attribute) {
-            /* @var \DOMAttr $attribute */
+            /* @var DOMAttr $attribute */
             $out->echoLiteral(' '.$name.'="');
 
             // Check for an attribute expression.
@@ -889,7 +901,7 @@ class Compiler {
     }
 
     private function compileChildBlock(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
-        /* @var \DOMAttr $child */
+        /* @var DOMAttr $child */
         $child = $special[self::T_CHILDREN];
         unset($special[self::T_CHILDREN]);
 

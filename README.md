@@ -192,7 +192,7 @@ echo '<code>Hello <b bi-literal>{username}</b></code>';
 
 ### The "x" Tag
 
-Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the **x** tag which will only render its contents.
+Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the `x` tag which will only render its contents.
 
 ```html
 <x bi-if="signedIn">Welcome back</x>
@@ -243,7 +243,7 @@ By default, components inherit the current scope's data. There are a few more th
 
 #### Pass Data Using `bi-with`???
 
-If you want to pass data other than the current context into a component you use the `with` attribute.
+If you want to pass data other than the current context into a component you use the `bi-with` attribute.
 
 ```html
 <div class="post post-commment" bi-component="Comment">
@@ -286,6 +286,17 @@ The blocks get inserted into the component when it is used.
     <div class="content"><p>When you put yourself out there you will always do well.</p></div>
   </body>
 </html>
+```
+
+### bi-include
+
+Sometimes you want to include a component dynamically. In this case you can use the `bi-include` attribute.
+
+```html
+<div bi-component="hello">Hello {name}</div>
+<div bi-component="goodbye">Goodbye {name}</div>
+
+<x bi-include=""
 ```
 
 ## HTML Utilities
