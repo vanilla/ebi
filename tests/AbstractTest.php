@@ -7,11 +7,9 @@
 
 namespace Ebi\Tests;
 
-
-use Ebi\Compiler;
-use Ebi\CompilingLoader;
 use Ebi\Ebi;
 use Ebi\FilesystemLoader;
+use Symfony\Component\Yaml\Yaml;
 
 abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     public function provideSpecTests($file) {
@@ -19,7 +17,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
         if (!file_exists($path)) {
             throw new \InvalidArgumentException("YAML file does not exist: $path", 500);
         }
-        $data = yaml_parse_file($path);
+        $data = Yaml::parse(file_get_contents($path));
         if ($data === false) {
             throw new \InvalidArgumentException("Invalid YAML file: $path", 500);
         }
@@ -45,9 +43,9 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-        if ($name !== '02-components bi-component bi-include') {
-            return;
-        }
+//        if ($name !== '02-components bi-component bi-include') {
+//            return;
+//        }
 
         $loader = new TestTemplateLoader();
         $ebi = new Ebi($loader, __DIR__.'/cache/specs');

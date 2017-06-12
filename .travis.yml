@@ -14,7 +14,7 @@ matrix:
   fast_finish: true
 
 install:
-    - composer install
+    - composer install --dev
     - composer require phpunit/phpunit ~5
 
 script:

@@ -241,9 +241,9 @@ class Compiler {
         $out->popScope();
 
         if ($options['runtime']) {
-            $out->appendCode("\n});");
+            $out->appendCode("});");
         } else {
-            $out->appendCode("\n};");
+            $out->appendCode("};");
         }
 
         $r = $out->flush();
@@ -486,7 +486,7 @@ class Compiler {
         } finally {
             $out->popScope();
             $out->indent(-1);
-            $out->appendCode("\n});");
+            $out->appendCode("});");
             $out->select($prev);
         }
     }
