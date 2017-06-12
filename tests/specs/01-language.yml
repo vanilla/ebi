@@ -70,7 +70,7 @@ tests:
     template: '<code bi-literal>Hello <b bi-literal>{username}</b> a > b</code>'
     data: []
     expected: '<code>Hello <b bi-literal>{username}</b> a &gt; b</code>'
-  - name: bi-x
-    template: '<bi-x bi-if="signedIn">Welcome back</bi-x>'
+  - name: x
+    template: '<x bi-if="signedIn">Welcome back</x>'
     data: {signedIn: true}
     expected: 'Welcome back'

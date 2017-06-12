@@ -21,7 +21,7 @@ class Compiler {
     const T_BLOCK = 'bi-block';
     const T_ELSE = 'bi-else';
     const T_EMPTY = 'bi-empty';
-    const T_X = 'bi-x';
+    const T_X = 'x';
 
     protected static $special = [
         self::T_COMPONENT => 1,
@@ -53,7 +53,7 @@ class Compiler {
         'bdo' => 'i',
 //        'bgsound' => 'i',
 //        'big' => 'i',
-        'bi-x' => 'i',
+        'x' => 'i',
 //        'blink' => 'i',
         'blockquote' => 'b',
         'body' => 'b',
@@ -207,7 +207,7 @@ class Compiler {
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<bi-x>$src</bi-x>";
+            $src = "<x>$src</x>";
             $fragment = true;
         }
 

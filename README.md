@@ -190,12 +190,12 @@ Don't parse templates within a literal.
 echo '<code>Hello <b bi-literal>{username}</b></code>';
 ```
 
-### bi-x
+### The "x" Tag
 
-Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the **bi-x** tag which will only render its contents.
+Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the **x** tag which will only render its contents.
 
 ```html
-<bi-x bi-if="signedIn">Welcome back</bi-x>
+<x bi-if="signedIn">Welcome back</x>
 ```
 
 ```php
@@ -271,7 +271,7 @@ You can define custom content elements within a component with blocks. An unname
 
 <!-- Use the layout component. -->
 <layout>
-  <bi-x bi-block="title">Hello world!</bi-x>
+  <x bi-block="title">Hello world!</x>
   <p bi-block="content">When you put yourself out there you will always do well.</p>
 </layout>
 ```

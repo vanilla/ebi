@@ -24,10 +24,10 @@ tests:
     tests:
       - name: named child
         template: >
-          <page><bi-x bi-block="greet">Hello {name}!</bi-x></page><div bi-component="page"><h1 bi-children="greet" /></div>
+          <page><x bi-block="greet">Hello {name}!</x></page><div bi-component="page"><h1 bi-children="greet" /></div>
   - name: bi-children nested
     data: [{name: 'Frank'}, {name: 'Joe'}]
     template: >-
-      <li bi-component="row" id="{id}"><bi-x bi-children /></li><ul bi-each="this" bi-as="i j"><row id="{i}">{j.name}</row></ul>
+      <li bi-component="row" id="{id}"><x bi-children /></li><ul bi-each="this" bi-as="i j"><row id="{i}">{j.name}</row></ul>
     expected: >-
       <ul><li id="0">Frank</li><li id="1">Joe</li></ul>
