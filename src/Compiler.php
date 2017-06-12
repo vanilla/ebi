@@ -822,18 +822,22 @@ class Compiler {
         $each = $this->expr($special[self::T_EACH]->value, $out);
         unset($special[self::T_EACH]);
 
-        $as = [$out->depthName('i', 1), $out->depthName('props', 1)];
+        $as = ['', $out->depthName('props', 1)];
         $scope = ['this' => $as[1]];
         if (!empty($special[self::T_AS])) {
             if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`', $special[self::T_AS]->value, $m)) {
                 $scope = [$m[2] => $as[1]];
                 if (!empty($m[1])) {
-                    $scope[$m[1]] = $as[0];
+                    $scope[$m[1]] = $as[0] = $out->depthName('i', 1);
                 }
             }
         }
         unset($special[self::T_AS]);
-        $out->appendCode("foreach ($each as \${$as[0]} => \${$as[1]}) {\n");
+        if (empty($as[0])) {
+            $out->appendCode("foreach ($each as \${$as[1]}) {\n");
+        } else {
+            $out->appendCode("foreach ($each as \${$as[0]} => \${$as[1]}) {\n");
+        }
         $out->depth(+1);
         $out->indent(+1);
         $out->pushScope($scope);
