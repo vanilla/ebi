@@ -330,7 +330,7 @@ Any HTML comments that you declare in the template will be added as PHP comments
 ```
 
 ```php
-return function ($data) {
+function ($data) {
     // Do something.
     echo '<p>wut!?</p>';
 };
@@ -340,7 +340,7 @@ return function ($data) {
 
 The **Ebi** class is used to compile and render Ebi templates. You should only need one instance of the class to render any number of templates.
 
-### Basic usage.
+### Basic Usage
 
 ```php
 $ebi = new Ebi(
