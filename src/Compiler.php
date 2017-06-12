@@ -281,7 +281,7 @@ class Compiler {
     }
 
     protected function domToArray(DOMNode $root) {
-        $result = array();
+        $result = [];
 
         if ($root->hasAttributes()) {
             $attrs = $root->attributes;
@@ -301,13 +301,13 @@ class Compiler {
                         : $result;
                 }
             }
-            $groups = array();
+            $groups = [];
             foreach ($children as $child) {
                 if (!isset($result[$child->nodeName])) {
                     $result[$child->nodeName] = $this->domToArray($child);
                 } else {
                     if (!isset($groups[$child->nodeName])) {
-                        $result[$child->nodeName] = array($result[$child->nodeName]);
+                        $result[$child->nodeName] = [$result[$child->nodeName]];
                         $groups[$child->nodeName] = 1;
                     }
                     $result[$child->nodeName][] = $this->domToArray($child);
