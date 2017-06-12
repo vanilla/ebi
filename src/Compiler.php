@@ -210,7 +210,7 @@ class Compiler {
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<div>$src</div>";
+            $src = "<html><body>$src</body></html>";
             $fragment = true;
         }
 
@@ -231,7 +231,7 @@ class Compiler {
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
 
-        $parent = $fragment ? $dom->firstChild : $dom;
+        $parent = $fragment ? $dom->firstChild->firstChild : $dom;
 
         foreach ($parent->childNodes as $node) {
             $this->compileNode($node, $out);
@@ -272,7 +272,7 @@ class Compiler {
                 $this->compileCommentNode($node, $out);
                 break;
             case XML_DOCUMENT_TYPE_NODE:
-                $out->echoCode($node->ownerDocument->saveHTML($node));
+                $out->echoLiteral("<!DOCTYPE {$node->name}>\n");
                 break;
             default:
                 $r = "// Unknown node\n".
