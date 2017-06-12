@@ -210,7 +210,7 @@ class Compiler {
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<x>$src</x>";
+            $src = "<div>$src</div>";
             $fragment = true;
         }
 
