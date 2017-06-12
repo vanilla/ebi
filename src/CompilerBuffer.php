@@ -29,20 +29,24 @@ class CompilerBuffer {
     private $style = self::STYLE_JOIN;
 
     /**
-     * @var int
+     * @var array
      */
-    private $baseIndent = 0;
+    private $defaults;
 
     /**
      * @var \SplObjectStorage
      */
     private $nodeProps;
 
-    public function __construct($style = self::STYLE_JOIN, $baseIndent = 0) {
+    public function __construct($style = self::STYLE_JOIN, array $defaults = []) {
+        $defaults += [
+            'baseIndent' => 0
+        ];
+
         $this->buffers = [];
         $this->nodeProps = new \SplObjectStorage();
         $this->style = $style;
-        $this->baseIndent = $baseIndent;
+        $this->defaults = $defaults;
         $this->select('');
     }
 
@@ -55,10 +59,7 @@ class CompilerBuffer {
         $this->currentName = $component;
 
         if (!array_key_exists($component, $this->buffers)) {
-            $this->buffers[$component] = $buffer = new ComponentBuffer();
-            if ($this->getStyle() === self::STYLE_ARRAY) {
-                $buffer->indent($this->getBaseIndent() + 1);
-            }
+            $this->buffers[$component] = $buffer = new ComponentBuffer($this->defaults);
         }
 
         $this->current =& $this->buffers[$component];
@@ -142,7 +143,7 @@ class CompilerBuffer {
     }
 
     protected function px($add = 0) {
-        return str_repeat(' ', ($this->baseIndent + $add) * 4);
+        return str_repeat(' ', ($this->defaults['baseIndent'] + $add) * 4);
     }
 
     /**
@@ -194,7 +195,7 @@ class CompilerBuffer {
 
     public function setNodeProp(\DOMNode $node = null, $name, $value) {
         if ($node === null) {
-            return;
+            return $this;
         }
 
         if (!$this->nodeProps->contains($node)) {
@@ -205,27 +206,19 @@ class CompilerBuffer {
         return $this;
     }
 
-    /**
-     * Get the baseIndent.
-     *
-     * @return int Returns the baseIndent.
-     */
-    public function getBaseIndent() {
-        return $this->baseIndent;
-    }
-
     public function getIndent() {
         return $this->current->getIndent();
     }
 
-    /**
-     * Set the baseIndent.
-     *
-     * @param int $baseIndent
-     * @return $this
-     */
-    public function setBaseIndent($baseIndent) {
-        $this->baseIndent = $baseIndent;
-        return $this;
+    public function getDepth() {
+        return $this->current->getDepth();
+    }
+
+    public function getScope() {
+        return $this->current->getScope();
+    }
+
+    public function getAllScopes() {
+        return $this->current->getAllScopes();
     }
 }

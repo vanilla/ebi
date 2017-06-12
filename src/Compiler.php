@@ -491,7 +491,9 @@ class Compiler {
 
         $prev = $out->select($name);
 
-        $out->appendCode("function () use (\$props, \$children) {\n");
+        $use = '$'.implode(', $', $out->getScopeVariables()).', $children';
+
+        $out->appendCode("function () use ($use) {\n");
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
 
@@ -552,14 +554,20 @@ class Compiler {
      * @return CompilerBuffer
      */
     protected function compileComponentBlocks(DOMElement $parent, CompilerBuffer $out) {
-        $blocksOut = new CompilerBuffer(CompilerBuffer::STYLE_ARRAY, $out->getIndent());
+        $blocksOut = new CompilerBuffer(CompilerBuffer::STYLE_ARRAY, [
+            'baseIndent' => $out->getIndent(),
+            'indent' => $out->getIndent() + 1,
+            'depth' => $out->getDepth(),
+            'scopes' => $out->getAllScopes()
+        ]);
 
         if ($this->isEmptyNode($parent)) {
             return $blocksOut;
         }
 
-        $blocksOut->appendCode("function () use (\$props, \$children) {\n");
-        $blocksOut->pushScope(['this' => 'props']);
+        $use = '$'.implode(', $', $blocksOut->getScopeVariables()).', $children';
+
+        $blocksOut->appendCode("function () use ($use) {\n");
         $blocksOut->indent(+1);
 
         try {
@@ -568,7 +576,6 @@ class Compiler {
             }
         } finally {
             $blocksOut->indent(-1);
-            $blocksOut->popScope();
             $blocksOut->appendCode("}");
         }
 

@@ -12,9 +12,21 @@ class ComponentBuffer {
     private $buffer = '';
     private $literalBuffer = '';
     private $inEcho = false;
-    private $indent = 0;
-    private $depth = 0;
-    private $scopes = [];
+    private $indent;
+    private $depth;
+    private $scopes;
+
+    public function __construct(array $defaults = []) {
+        $defaults += [
+            'depth' => 0,
+            'indent' => 0,
+            'scopes' => []
+        ];
+
+        $this->depth = $defaults['depth'];
+        $this->indent = $defaults['indent'];
+        $this->scopes = $defaults['scopes'];
+    }
 
     public function echoLiteral($value) {
         $this->literalBuffer .= $value;
@@ -99,6 +111,14 @@ class ComponentBuffer {
         return $r;
     }
 
+    public function getScope() {
+        return end($this->scopes);
+    }
+
+    public function getAllScopes() {
+        return $this->scopes;
+    }
+
     public function flush() {
         $this->flushEcho();
 
@@ -112,5 +132,14 @@ class ComponentBuffer {
      */
     public function getIndent() {
         return $this->indent;
+    }
+
+    /**
+     * Get the depth.
+     *
+     * @return mixed Returns the depth.
+     */
+    public function getDepth() {
+        return $this->depth;
     }
 }

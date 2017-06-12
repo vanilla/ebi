@@ -37,12 +37,12 @@ class TemplateTest extends AbstractTest {
     /**
      *
      */
-    public function testVerbTense() {
-        $fakeData = new FakeData();
-
-        foreach ($fakeData['articles'] as $article) {
-            echo $article['headline']."\n";
+//    public function testVerbTense() {
+//        $fakeData = new FakeData();
+//
+//        foreach ($fakeData['articles'] as $article) {
+//            echo $article['headline']."\n";
 //            echo $article['question']."\n";
-        }
-    }
+//        }
+//    }
 }
