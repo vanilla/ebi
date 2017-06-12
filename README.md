@@ -135,6 +135,8 @@ foreach ($conext['comments'] as $i1 => $data1) {
 echo '</ul>';
 ```
 
+*Tip: If you want to access the key of an array, but still want to access its values without dot syntax then you can use `bi-as="key this"`.*
+
 ### bi-empty
 
 Specify a template when there are no items.

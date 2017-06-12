@@ -48,10 +48,14 @@ tests:
         template: |
           <ul bi-each="comments" bi-as="comment"><li>{name}: {comment.body}</li></ul>
         expected: '<ul><li>How: do I?</li><li>How: do you?</li></ul>'
-      - name: bi-with index
+      - name: with index
         template: |
           <ul bi-each="comments" bi-as="i comment"><li>{i} {name}: {comment.body}</li></ul>
         expected: '<ul><li>0 How: do I?</li><li>1 How: do you?</li></ul>'
+      - name: 'with index & this'
+        template: |
+          <ul bi-each="comments" bi-as="i this"><li>{i}: {body}</li></ul>
+        expected: '<ul><li>0: do I?</li><li>1: do you?</li></ul>'
   - name: bi-each bi-empty
     template: >
       <ul bi-each="this"><li>{b}</li><li bi-empty>empty</li></ul>
