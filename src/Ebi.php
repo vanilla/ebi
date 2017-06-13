@@ -10,23 +10,66 @@ namespace Ebi;
 
 class Ebi {
     /**
+     * @var TemplateLoaderInterface
+     */
+    private $templateLoader;
+
+    /**
+     * @var string
+     */
+    private $cachePath;
+
+    /**
+     * @var Compiler
+     */
+    private $compiler;
+
+    /**
      * @var callable[]
      */
     private $components = [];
 
     /**
-     * @var ComponentLoaderInterface
+     * @var callable[]
      */
-    private $componentLoader;
+    protected $functions;
 
     /**
      * Ebi constructor.
      *
      * @param TemplateLoaderInterface $templateLoader Used to load template sources from component names.
      * @param string $cachePath The path to cache compiled templates.
+     * @param CompilerInterface $compiler The compiler used to compile templates.
      */
-    public function __construct(TemplateLoaderInterface $templateLoader, $cachePath) {
-        $this->componentLoader = new CompilingLoader($templateLoader, $cachePath);
+    public function __construct(TemplateLoaderInterface $templateLoader, $cachePath, CompilerInterface $compiler = null) {
+        $this->templateLoader = $templateLoader;
+        $this->cachePath = $cachePath;
+        $this->compiler = $compiler ?: new Compiler();
+
+        $this->defineFunction('count');
+        $this->defineFunction('date', [$this, 'dateFormat']);
+        $this->defineFunction('empty');
+        $this->defineFunction('htmlencode', 'htmlspecialchars');
+        $this->defineFunction('join');
+        $this->defineFunction('lcase', $this->mb('strtolower'));
+        $this->defineFunction('lcfirst');
+        $this->defineFunction('ltrim');
+        $this->defineFunction('queryencode', 'http_build_query');
+        $this->defineFunction('rtrim');
+        $this->defineFunction('sprintf');
+        $this->defineFunction('strlen', $this->mb('strlen'));
+        $this->defineFunction('substr', $this->mb('substr'));
+        $this->defineFunction('trim');
+        $this->defineFunction('ucase', $this->mb('strtoupper'));
+        $this->defineFunction('ucfirst');
+        $this->defineFunction('ucwords');
+        $this->defineFunction('urlencode', 'rawurlencode');
+
+        $this->defineFunction('@class', [$this, 'cssClass']);
+    }
+
+    private function mb($func) {
+        return function_exists("mb_$func") ? "mb_$func" : $func;
     }
 
     /**
@@ -74,8 +117,8 @@ class Ebi {
     public function lookup($component) {
         $component = strtolower($component);
 
-        if ($this->componentLoader && !array_key_exists($component, $this->components)) {
-            $this->componentLoader->load($component, $this);
+        if (!array_key_exists($component, $this->components)) {
+            $this->loadComponent($component);
         }
 
         if (isset($this->components[$component])) {
@@ -91,8 +134,103 @@ class Ebi {
      * @param string $name The name of the component to register.
      * @param callable $component The component function.
      */
-    public function register($name, callable $component) {
+    public function defineComponent($name, callable $component) {
         $this->components[$name] = $component;
+    }
+
+    /**
+     * Register a runtime function.
+     *
+     * @param string $name The name of the function.
+     * @param callable $function The function callback.
+     */
+    public function defineFunction($name, $function = null) {
+        if ($function === null) {
+            $function = $name;
+        }
+
+        $this->functions[strtolower($name)] = $function;
+        $this->compiler->defineFunction($name, $function);
+    }
+
+    /**
+     * Load a component.
+     *
+     * @param string $component The name of the component to load.
+     * @return callable|null Returns the component.
+     */
+    protected function loadComponent($component) {
+        $cacheKey = $this->templateLoader->cacheKey($component);
+        $cachePath = "{$this->cachePath}/$cacheKey.php";
+
+        if (!file_exists($cachePath)) {
+            $src = $this->templateLoader->load($component);
+
+            $php = $this->compiler->compile($src, ['basename' => $component]);
+            $comment = "/*\n".str_replace('*/', '❄/', trim($src))."\n*/";
+
+            $this->filePutContents($cachePath, "<?php\n$comment\n$php");
+        }
+
+        $fn = $this->requireFile($cachePath);
+
+        if (is_callable($fn) && basename($cacheKey, '.php') === $component) {
+            $this->defineComponent($component, $fn);
+            return $fn;
+        }
+    }
+
+    private function getFunctionCompiler($name, $function) {
+        $var = var_export(strtolower($name), true);
+        $fn = function ($expr) use ($var) {
+            return "\$this->call($var, $expr)";
+        };
+
+        if (is_string($function)) {
+            $fn = function ($expr) use ($function) {
+                return "$function($expr)";
+            };
+        } elseif (is_array($function)) {
+            if (is_string($function[0])) {
+                $fn = function ($expr) use ($function) {
+                    return "$function[0]::$function[1]($expr)";
+                };
+            } elseif ($function[0] === $this) {
+                $fn = function ($expr) use ($function) {
+                    return "\$this->$function[1]($expr)";
+                };
+            }
+        }
+
+        return $fn;
+    }
+
+    /**
+     * A safe version of {@link file_put_contents()} that also clears op caches.
+     *
+     * @param string $path The path to save to.
+     * @param string $contents The contents of the file.
+     * @return bool Returns **true** on success or **false** on failure.
+     */
+    private function filePutContents($path, $contents) {
+        if (!file_exists(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+        $tmpPath = tempnam(dirname($path), 'ebi-');
+        $r = false;
+        if (file_put_contents($tmpPath, $contents) !== false) {
+            chmod($tmpPath, 0664);
+            $r = rename($tmpPath, $path);
+        }
+
+        if (function_exists('apc_delete_file')) {
+            // This fixes a bug with some configurations of apc.
+            @apc_delete_file($path);
+        } elseif (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($path);
+        }
+
+        return $r;
     }
 
     /**

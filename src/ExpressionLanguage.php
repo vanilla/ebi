@@ -40,35 +40,6 @@ class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\Expressio
         });
     }
 
-    protected function registerFunctions() {
-        $this->registerFunction('count');
-        $this->registerFunction('empty');
-        $this->registerFunction('implode');
-        $this->registerFunction('lcfirst');
-        $this->registerFunction('lcase', $this->nameMapCompiler('strtolower'));
-        $this->registerFunction('ucase', $this->nameMapCompiler('strtoupper'));
-        $this->registerFunction('ucfirst');
-        $this->registerFunction('ucwords');
-        $this->registerFunction('ltrim');
-        $this->registerFunction('rtrim');
-        $this->registerFunction('trim');
-        $this->registerFunction('sprintf');
-        $this->registerFunction('substr');
-        $this->registerFunction('dateFormat', function ($expr) {
-            return "\$this->dateFormat($expr)";
-        });
-
-        $this->registerFunction('@class', function ($expr) {
-            return "\$this->cssClass($expr)";
-        });
-    }
-
-    public function nameMapCompiler($phpName) {
-        return function ($expr) use ($phpName) {
-            return "$phpName($expr)";
-        };
-    }
-
     /**
      * Registers a function.
      *

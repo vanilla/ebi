@@ -16,6 +16,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase {
         $tpl = '<p bi-if="empty(items)">There are no items!!!</p>';
 
         $compiler = new Compiler();
+        $compiler->defineFunction('empty');
 
         $r = $compiler->compile($tpl, ['runtime' => false]);
 

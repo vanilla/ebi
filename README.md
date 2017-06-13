@@ -29,19 +29,19 @@ Functions are called using the `functionName()` syntax. The following functions 
 | function   | description
 |------------|-------------
 | count      | Count the number of items in an array. 
+| date       | Format a date.
 | empty      | Check to see if a string or array is empty.
 | join       | Join the elements of an array into a string. 
 | lcase      | Lowercase a string.
-| ucase      | Uppercase a string.
 | lcfirst    | Lowercase the first letter of a word.
-| ucfirst    | Uppercase the first letter of a word.
-| ucwords    | Uppercase the first letter in each word of a string.
 | ltrim      | Left trim a string.
 | rtrim      | Right trim a string.
-| trim       | Trim a string.
 | sprintf    | Return a formatted string.
 | substr     | Return a part of a string.
-| dateFormat | Format a date.
+| trim       | Trim a string.
+| ucase      | Uppercase a string.
+| ucfirst    | Uppercase the first letter of a word.
+| ucwords    | Uppercase the first letter in each word of a string.
 
 ### Unescaping Data
 
@@ -220,7 +220,7 @@ Components are a powerful part of Ebi. With components you can make re-usable te
 Define a component that can be used later in the template.
 
 ```html
-<time bi-component="long-date" datetime="{dateFormat(date, 'c')}">{dateFormat(date, 'r')}</time>
+<time bi-component="long-date" datetime="{date(date, 'c')}">{date(date, 'r')}</time>
 
 <long-date date="{dateInserted}" />
 ```
@@ -228,9 +228,9 @@ Define a component that can be used later in the template.
 ```php
 $this->register('long-date', function ($props) {
     echo '<time datetime="',
-        htmlspecialchars(dateFormat($props['date'], 'c')),
+        htmlspecialchars(date($props['date'], 'c')),
         '">',
-        htmlspecialchars(dateFormat($props['date'], 'r')),
+        htmlspecialchars(date($props['date'], 'r')),
         '</time>';
 });
 

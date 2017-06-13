@@ -185,10 +185,6 @@ class Compiler {
         'wbr' => 'i'
     ];
 
-    protected static $blocks = [
-        'body', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'head', 'html', 'li', 'meta', 'p', 'ol', 'ul'
-    ];
-
     /**
      * @var ExpressionLanguage
      */
@@ -196,8 +192,63 @@ class Compiler {
 
     public function __construct() {
         $this->expressions = new ExpressionLanguage();
+    }
 
-//        $this->expressions->registerNodeFunction()
+    /**
+     * Register a runtime function.
+     *
+     * @param string $name The name of the function.
+     * @param callable $function The function callback.
+     */
+    public function defineFunction($name, $function = null) {
+        if ($function === null) {
+            $function = $name;
+        }
+
+        $this->expressions->register(
+            $name,
+            $this->getFunctionCompiler($name, $function),
+            $this->getFunctionEvaluator($function)
+        );
+    }
+
+    private function getFunctionEvaluator($function) {
+        if ($function === 'empty') {
+            return function ($expr) {
+                return empty($expr);
+            };
+        } elseif ($function === 'isset') {
+            return function ($expr) {
+                return isset($expr);
+            };
+        }
+
+        return $function;
+    }
+
+    private function getFunctionCompiler($name, $function) {
+        $var = var_export(strtolower($name), true);
+        $fn = function ($expr) use ($var) {
+            return "\$this->call($var, $expr)";
+        };
+
+        if (is_string($function)) {
+            $fn = function ($expr) use ($function) {
+                return "$function($expr)";
+            };
+        } elseif (is_array($function)) {
+            if (is_string($function[0])) {
+                $fn = function ($expr) use ($function) {
+                    return "$function[0]::$function[1]($expr)";
+                };
+            } elseif ($function[0] instanceof Ebi) {
+                $fn = function ($expr) use ($function) {
+                    return "\$this->$function[1]($expr)";
+                };
+            }
+        }
+
+        return $fn;
     }
 
     public function compile($src, array $options = []) {
@@ -223,7 +274,7 @@ class Compiler {
 
         if ($options['runtime']) {
             $name = var_export($options['basename'], true);
-            $out->appendCode("\$this->register($name, function (\$props = [], \$children = []) {\n");
+            $out->appendCode("\$this->defineComponent($name, function (\$props = [], \$children = []) {\n");
         } else {
             $out->appendCode("function (\$props = [], \$children = []) {\n");
         }
@@ -390,11 +441,49 @@ class Compiler {
             }
         });
 
-        if ($attr !== null && null !== $fn = $this->expressions->getFunctionCompiler('@'.$attr->name)) {
+        if ($attr !== null && null !== $fn = $this->getAttributeFunction($attr)) {
             $compiled = call_user_func($fn, $compiled);
         }
 
         return $compiled;
+    }
+
+    /**
+     * Get the compiler function to wrap an attribute.
+     *
+     * Attribute functions are regular expression functions, but with a special naming convention. The following naming
+     * conventions are supported:
+     *
+     * - **@tag:attribute**: Applies to an attribute only on a specific tag.
+     * - **@attribute**: Applies to all attributes with a given name.
+     *
+     * @param DOMAttr $attr The attribute to look at.
+     * @return callable|null A function or **null** if the attribute doesn't have a function.
+     */
+    private function getAttributeFunction(DOMAttr $attr) {
+        $keys = ['@'.$attr->ownerElement->tagName.':'.$attr->name, '@'.$attr->name];
+
+        foreach ($keys as $key) {
+            if (null !== $fn = $this->expressions->getFunctionCompiler($key)) {
+                return $fn;
+            }
+        }
+    }
+
+    /**
+     * Call a registered function.
+     *
+     * @param $name
+     * @param array ...$args
+     * @return null
+     * @see Ebi::addFunction()
+     */
+    public function call($name, ...$args) {
+        if (isset($this->functions[$name])) {
+            return $this->functions[$name](...$args);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -477,7 +566,7 @@ class Compiler {
         $prev = $out->select($name);
 
         $varName = var_export($name, true);
-        $out->appendCode("\$this->register($varName, function (\$props = [], \$children = []) {\n");
+        $out->appendCode("\$this->defineComponent($varName, function (\$props = [], \$children = []) {\n");
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
 
