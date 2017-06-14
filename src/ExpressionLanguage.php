@@ -13,7 +13,6 @@ use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\ExpressionLanguage {
     public function __construct() {
         parent::__construct();
-        $this->registerFunctions();
 
         $this->registerNodeFunction(GetAttrNode::class, function (\Symfony\Component\ExpressionLanguage\Compiler $compiler, GetAttrNode $node) {
                 switch ($node->attributes['type']) {
@@ -37,28 +36,6 @@ class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\Expressio
                         ;
                         break;
                 }
-        });
-    }
-
-    /**
-     * Registers a function.
-     *
-     * @param string $name The function name
-     * @param callable $compiler A callable able to compile the function
-     *
-     * @throws \LogicException when registering a function after calling evaluate(), compile() or parse()
-     *
-     * @see ExpressionFunction
-     */
-    public function registerFunction($name, callable $compiler = null) {
-        if (!$compiler) {
-            $compiler = function ($expr) use ($name) {
-                return "$name($expr)";
-            };
-        }
-
-        $this->register($name, $compiler, function ($value) {
-            return $value;
         });
     }
 
