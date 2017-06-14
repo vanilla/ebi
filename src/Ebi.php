@@ -51,15 +51,21 @@ class Ebi {
         $this->cachePath = $cachePath;
         $this->compiler = $compiler ?: new Compiler();
 
+        $this->defineFunction('abs');
+        $this->defineFunction('ceil');
         $this->defineFunction('count');
         $this->defineFunction('date', [$this, 'dateFormat']);
         $this->defineFunction('empty');
+        $this->defineFunction('floor');
         $this->defineFunction('htmlencode', 'htmlspecialchars');
         $this->defineFunction('join');
         $this->defineFunction('lcase', $this->mb('strtolower'));
         $this->defineFunction('lcfirst');
         $this->defineFunction('ltrim');
+        $this->defineFunction('max');
+        $this->defineFunction('min');
         $this->defineFunction('queryencode', 'http_build_query');
+        $this->defineFunction('round');
         $this->defineFunction('rtrim');
         $this->defineFunction('sprintf');
         $this->defineFunction('strlen', $this->mb('strlen'));
