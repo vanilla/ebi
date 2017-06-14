@@ -22,6 +22,23 @@ This will include the "firstName" and "lastName" database keys. You can access d
 <p>Hello {user.firstName} {user.lastName}.</p>
 ```
 
+### Meta
+
+You can add global meta data to all templates which are then accessed by putting an `@` sign before a variable name.
+
+```html
+<h1>{@title}</h1>
+```
+
+```php
+$ebi = new Ebi(...);
+$ebi->setMeta('title', 'Welcome to the Page');
+
+$ebi->write(...);
+```
+
+The meta array is a good place to put configuration information that is separate from template data. Since it is global to all components you can access it from within any component regardless of scope.
+
 ### Functions
 
 Functions are called using the `functionName()` syntax. The following functions are included by default:

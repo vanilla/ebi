@@ -192,6 +192,7 @@ class Compiler {
 
     public function __construct() {
         $this->expressions = new ExpressionLanguage();
+        $this->expressions->setNamePattern('/[@a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/A');
     }
 
     /**
@@ -436,6 +437,8 @@ class Compiler {
         $compiled = $this->expressions->compile($expr, function ($name) use ($names) {
             if (isset($names[$name])) {
                 return $names[$name];
+            } elseif ($name[0] === '@') {
+                return 'this->meta['.var_export(substr($name, 1), true).']';
             } else {
                 return $names['this'].'['.var_export($name, true).']';
             }

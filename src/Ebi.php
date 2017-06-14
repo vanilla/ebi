@@ -35,6 +35,11 @@ class Ebi {
     protected $functions;
 
     /**
+     * @var array
+     */
+    private $meta;
+
+    /**
      * Ebi constructor.
      *
      * @param TemplateLoaderInterface $templateLoader Used to load template sources from component names.
@@ -297,5 +302,28 @@ class Ebi {
         }
 
         return $date->format($format);
+    }
+
+    /**
+     * Get a single item from the meta array.
+     *
+     * @param string $name The key to get from.
+     * @param mixed $default The default value if no item at the key exists.
+     * @return mixed Returns the meta value.
+     */
+    public function getMeta($name, $default = null) {
+        return isset($this->meta[$name]) ? $this->meta[$name] : $default;
+    }
+
+    /**
+     * Set a single item to the meta array.
+     *
+     * @param string $name The key to set.
+     * @param mixed $value The new value.
+     * @return $this
+     */
+    public function setMeta($name, $value) {
+        $this->meta[$name] = $value;
+        return $this;
     }
 }
