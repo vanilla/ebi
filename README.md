@@ -46,8 +46,8 @@ Functions are called using the `functionName()` syntax. The following functions 
 | function   | description
 |------------|-------------
 | count      | Count the number of items in an array. 
-| date       | Format a date.
 | empty      | Check to see if a string or array is empty.
+| formatDate | Format a date.
 | join       | Join the elements of an array into a string. 
 | lcase      | Lowercase a string.
 | lcfirst    | Lowercase the first letter of a word.

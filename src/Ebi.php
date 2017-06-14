@@ -54,17 +54,17 @@ class Ebi {
         $this->defineFunction('abs');
         $this->defineFunction('ceil');
         $this->defineFunction('count');
-        $this->defineFunction('date', [$this, 'dateFormat']);
+        $this->defineFunction('formatDate', [$this, 'formatDate']);
         $this->defineFunction('empty');
         $this->defineFunction('floor');
-        $this->defineFunction('htmlencode', 'htmlspecialchars');
+        $this->defineFunction('htmlEncode', 'htmlspecialchars');
         $this->defineFunction('join');
         $this->defineFunction('lcase', $this->mb('strtolower'));
         $this->defineFunction('lcfirst');
         $this->defineFunction('ltrim');
         $this->defineFunction('max');
         $this->defineFunction('min');
-        $this->defineFunction('queryencode', 'http_build_query');
+        $this->defineFunction('queryEncode', 'http_build_query');
         $this->defineFunction('round');
         $this->defineFunction('rtrim');
         $this->defineFunction('sprintf');
@@ -76,7 +76,7 @@ class Ebi {
         $this->defineFunction('ucwords');
         $this->defineFunction('urlencode', 'rawurlencode');
 
-        $this->defineFunction('@class', [$this, 'cssClass']);
+        $this->defineFunction('@class', [$this, 'attributeClass']);
     }
 
     private function mb($func) {
@@ -262,12 +262,12 @@ class Ebi {
      * @param $expr
      * @return string
      */
-    public function cssClass($expr) {
+    public function attributeClass($expr) {
         if (is_array($expr)) {
             $classes = [];
             foreach ($expr as $i => $val) {
                 if (is_array($val)) {
-                    $classes[] = $this->cssClass($val);
+                    $classes[] = $this->attributeClass($val);
                 } elseif (is_int($i)) {
                     $classes[] = $val;
                 } elseif (!empty($val)) {
@@ -288,7 +288,7 @@ class Ebi {
      * @return string Returns the formatted data.
      * @see date_format()
      */
-    public function dateFormat($date, $format = 'c') {
+    public function formatDate($date, $format = 'c') {
         if (is_string($date)) {
             try {
                 $date = new \DateTimeImmutable($date);
