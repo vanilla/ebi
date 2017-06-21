@@ -9,9 +9,10 @@ namespace Ebi\Tests;
 
 use Ebi\Ebi;
 use Ebi\FilesystemLoader;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
-abstract class AbstractTest extends \PHPUnit_Framework_TestCase {
+abstract class AbstractTest extends TestCase {
     public function provideSpecTests($file) {
         $path = __DIR__."/specs/$file";
         if (!file_exists($path)) {

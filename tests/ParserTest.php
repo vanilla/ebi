@@ -9,9 +9,10 @@ namespace Ebi\Tests;
 
 use Ebi\Compiler;
 use Ebi\Tests\Faker\Social;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
-class ParserTest extends \PHPUnit_Framework_TestCase {
+class ParserTest extends TestCase {
     public function testIf() {
         $tpl = '<p bi-if="empty(items)">There are no items!!!</p>';
 
