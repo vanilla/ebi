@@ -191,31 +191,6 @@ class Ebi {
         }
     }
 
-    private function getFunctionCompiler($name, $function) {
-        $var = var_export(strtolower($name), true);
-        $fn = function ($expr) use ($var) {
-            return "\$this->call($var, $expr)";
-        };
-
-        if (is_string($function)) {
-            $fn = function ($expr) use ($function) {
-                return "$function($expr)";
-            };
-        } elseif (is_array($function)) {
-            if (is_string($function[0])) {
-                $fn = function ($expr) use ($function) {
-                    return "$function[0]::$function[1]($expr)";
-                };
-            } elseif ($function[0] === $this) {
-                $fn = function ($expr) use ($function) {
-                    return "\$this->$function[1]($expr)";
-                };
-            }
-        }
-
-        return $fn;
-    }
-
     /**
      * A safe version of {@link file_put_contents()} that also clears op caches.
      *
@@ -330,6 +305,30 @@ class Ebi {
      */
     public function setMeta($name, $value) {
         $this->meta[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Get the template loader.
+     *
+     * The template loader translates component names into template contents.
+     *
+     * @return TemplateLoaderInterface Returns the template loader.
+     */
+    public function getTemplateLoader() {
+        return $this->templateLoader;
+    }
+
+    /**
+     * Set the template loader.
+     *
+     * The template loader translates component names into template contents.
+     *
+     * @param TemplateLoaderInterface $templateLoader The new template loader.
+     * @return $this
+     */
+    public function setTemplateLoader($templateLoader) {
+        $this->templateLoader = $templateLoader;
         return $this;
     }
 }
