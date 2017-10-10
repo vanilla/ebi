@@ -18,4 +18,30 @@ class RuntimeTest extends AbstractTest {
 
         $this->assertEquals('bar', $ebi->render('test'));
     }
+
+    /**
+     * A closure that is added with **defineFunction** should be accessible with **call**.
+     */
+    public function testCallClosure() {
+        $ebi = new TestEbi($this);
+
+        $ebi->defineFunction('foo', function ($a, $b) {
+            return $a.$b.'!';
+        });
+
+        $v = $ebi->call('foo', 'bar', 'baz');
+        $this->assertEquals('barbaz!', $v);
+
+    }
+
+    /**
+     * A missing function should throw a **RuntimeException**.
+     *
+     * @expectedException \Ebi\RuntimeException
+     */
+    public function testCallMissingFunction() {
+        $ebi = new TestEbi($this);
+
+        $ebi->call('missing', 'foo');
+    }
 }
