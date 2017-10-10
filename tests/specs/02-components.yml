@@ -34,3 +34,10 @@ tests:
       <li bi-component="row" id="{id}"><x bi-children /></li><ul bi-each="this" bi-as="i j"><row id="{i}">{j.name}</row></ul>
     expected: >-
       <ul><li id="0">Frank</li><li id="1">Joe</li></ul>
+  - name: unicode
+    data: []
+    template: >-
+      <span bi-component="flyout-arrow" class="flyout-arrow">▾</span><flyout-arrow />
+    expected: >-
+      <span class="flyout-arrow">▾</span>
+
