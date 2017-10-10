@@ -294,7 +294,7 @@ class Compiler {
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
-            $src = "<html><body>$src</body></html>";
+            $src = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><html><body>$src</body></html>";
             $fragment = true;
         }
 
@@ -315,7 +315,7 @@ class Compiler {
         $out->pushScope(['this' => 'props']);
         $out->indent(+1);
 
-        $parent = $fragment ? $dom->firstChild->firstChild : $dom;
+        $parent = $fragment ? $dom->firstChild->nextSibling->firstChild : $dom;
 
         foreach ($parent->childNodes as $node) {
             $this->compileNode($node, $out);
