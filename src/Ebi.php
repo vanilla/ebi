@@ -165,6 +165,25 @@ class Ebi {
     }
 
     /**
+     * Call a function registered with **defineFunction()**.
+     *
+     * If a static or global function is registered then it's simply rendered in the compiled template.
+     * This method is for closures or callbacks.
+     *
+     * @param string $name The name of the registered function.
+     * @param array ...$args The function's argument.
+     * @return mixed Returns the result of the function
+     * @throws RuntimeException Throws an exception when the function isn't found.
+     */
+    public function call($name, ...$args) {
+        if (!isset($this->functions[$name])) {
+            throw new RuntimeException("Call to undefined function $name.", 500);
+        } else {
+            return $this->functions[$name](...$args);
+        }
+    }
+
+    /**
      * Load a component.
      *
      * @param string $component The name of the component to load.
