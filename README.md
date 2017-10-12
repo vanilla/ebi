@@ -278,17 +278,17 @@ If you want to pass data other than the current context into a component you use
 <Comment x-with="lastComment" />
 ```
 
-### x-child and x-block
+### x-children and x-block
 
-You can define custom content elements within a component with blocks. An unnamed block will uses the same tag it's declared in. If you name a block then the name becomes its tag name.
+You can define custom content elements within a component with blocks. An unnamed block will use the same tag it's declared in.
 
 ```html
 <!-- Declare the layout component. -->
 <html x-component="layout">
-  <head><title x-child="title" /></head>
+  <head><title x-children="title" /></head>
   <body>
-    <h1 x-child="title" />
-    <div class="content" x-child="content" />
+    <h1 x-children="title" />
+    <div class="content" x-children="content" />
   </body>
 </html>
 
