@@ -70,12 +70,16 @@ All variables are HTML escaped by default. If you want to return unescaped HTML,
 
 ## Template Attributes
 
-### bi-if
+Most of Ebi's functionality is accessed using template attributes. These are HTML style attributes that you add to any tag in your template to add logic. All of Ebi's attributes start with an `x-` prefix to help you differentiate between Ebi attributes and regular HTML attributes.
+
+*The letter "X" was chosen to mean "extended attribute" and was inspired by the same prefix in HTTP headers.*
+
+### x-if
 
 Only display an element if the condition is true.
 
 ```html
-<p bi-if="empty(items)">
+<p x-if="empty(items)">
 There are no items!
 </p>
 ```
@@ -86,15 +90,15 @@ if (empty($data['items'])) {
 }
 ```
 
-### bi-else
+### x-else
 
 Add an else element in conjunction with an if element.
 
 ```html
-<div bi-if="signedIn">
+<div x-if="signedIn">
     Welcome!
 </div>
-<div bi-else>
+<div x-else>
     Sign in to participate.
 </div>
 ```
@@ -107,12 +111,12 @@ if ($data['signedIn']) {
 }
 ```
 
-### bi-each
+### x-each
 
 Loop over elements.
 
 ```html
-<ul bi-each="people">
+<ul x-each="people">
     <li>Hi {first} {last}!</li>
 </ul>
 ```
@@ -128,12 +132,12 @@ foreach ($data['people'] as $data1) {
 echo '</ul>';
 ```
 
-### bi-as
+### x-as
 
 Name the iterator element so that you can still reference the parent.
 
 ```html
-<ul bi-each="comments" bi-as="i comment">
+<ul x-each="comments" x-as="i comment">
     <li>{name}: {comment.body} #{i}</li>
 </ul>
 ```
@@ -152,16 +156,16 @@ foreach ($conext['comments'] as $i1 => $data1) {
 echo '</ul>';
 ```
 
-*Tip: If you want to access the key of an array, but still want to access its values without dot syntax then you can use `bi-as="key this"`.*
+*Tip: If you want to access the key of an array, but still want to access its values without dot syntax then you can use `x-as="key this"`.*
 
-### bi-empty
+### x-empty
 
 Specify a template when there are no items.
 
 ```html
-<ul bi-each="messages">
+<ul x-each="messages">
     <li>{body}</li>
-    <li bi-empty>There are no messages.</li>
+    <li x-empty>There are no messages.</li>
 </ul>
 ```
 
@@ -179,12 +183,12 @@ if (empty($data['messages'])) {
 echo '</ul>';
 ```
 
-### bi-with
+### x-with
 
 Pass an item into a template.
 
 ```html
-<div bi-with="user">
+<div x-with="user">
     Hello {name}.
 </div>
 ```
@@ -197,16 +201,16 @@ echo '<div>',
     '</div>';
 ```
 
-### bi-literal
+### x-literal
 
 Don't parse templates within a literal.
 
 ```html
-<code bi-literal>Hello <b bi-literal>{username}</b></code>
+<code x-literal>Hello <b x-literal>{username}</b></code>
 ```
 
 ```php
-echo '<code>Hello <b bi-literal>{username}</b></code>';
+echo '<code>Hello <b x-literal>{username}</b></code>';
 ```
 
 ### The "x" Tag
@@ -214,7 +218,7 @@ echo '<code>Hello <b bi-literal>{username}</b></code>';
 Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the `x` tag which will only render its contents.
 
 ```html
-<x bi-if="signedIn">Welcome back</x>
+<x x-if="signedIn">Welcome back</x>
 ```
 
 ```php
@@ -230,14 +234,14 @@ Components are a powerful part of Ebi. With components you can make re-usable te
 - Each template is a component. You can declare additional components in a template too.
 - Components are lowercase. It is recommended that you use dashes to separate words in component names. Make sure to name your template files in lowercase to avoid issues with case sensitive file systems.
 - Components are used by declaring an HTML element with the component's name. Components create custom tags!
-- You can pass data into components with contributes. If you want to pass all of the current template's data into a component use the `bi-with` attribute.
+- You can pass data into components with contributes. If you want to pass all of the current template's data into a component use the `x-with` attribute.
 
-### bi-component
+### x-component
 
 Define a component that can be used later in the template.
 
 ```html
-<time bi-component="long-date" datetime="{date(date, 'c')}">{date(date, 'r')}</time>
+<time x-component="long-date" datetime="{date(date, 'c')}">{date(date, 'r')}</time>
 
 <long-date date="{dateInserted}" />
 ```
@@ -260,38 +264,38 @@ Components must begin with a capital letter or include a dash or dot. Otherwise 
 
 By default, components inherit the current scope's data. There are a few more things you can do to pass additional data into a component.
 
-#### Pass Data Using `bi-with`???
+#### Pass Data Using `x-with`???
 
-If you want to pass data other than the current context into a component you use the `bi-with` attribute.
+If you want to pass data other than the current context into a component you use the `x-with` attribute.
 
 ```html
-<div class="post post-commment" bi-component="Comment">
+<div class="post post-commment" x-component="Comment">
   <img src="{author.photoUrl}" /> <a href="author.url">{author.username}</a>
 
   <p>{unescape(body)}</p>
 </div>
 
-<Comment bi-with="lastComment" />
+<Comment x-with="lastComment" />
 ```
 
-### bi-child and bi-block
+### x-child and x-block
 
 You can define custom content elements within a component with blocks. An unnamed block will uses the same tag it's declared in. If you name a block then the name becomes its tag name.
 
 ```html
 <!-- Declare the layout component. -->
-<html bi-component="layout">
-  <head><title bi-child="title" /></head>
+<html x-component="layout">
+  <head><title x-child="title" /></head>
   <body>
-    <h1 bi-child="title" />
-    <div class="content" bi-child="content" />
+    <h1 x-child="title" />
+    <div class="content" x-child="content" />
   </body>
 </html>
 
 <!-- Use the layout component. -->
 <layout>
-  <x bi-block="title">Hello world!</x>
-  <p bi-block="content">When you put yourself out there you will always do well.</p>
+  <x x-block="title">Hello world!</x>
+  <p x-block="content">When you put yourself out there you will always do well.</p>
 </layout>
 ```
 
@@ -307,15 +311,15 @@ The blocks get inserted into the component when it is used.
 </html>
 ```
 
-### bi-include
+### x-include
 
-Sometimes you want to include a component dynamically. In this case you can use the `bi-include` attribute.
+Sometimes you want to include a component dynamically. In this case you can use the `x-include` attribute.
 
 ```html
-<div bi-component="hello">Hello {name}</div>
-<div bi-component="goodbye">Goodbye {name}</div>
+<div x-component="hello">Hello {name}</div>
+<div x-component="goodbye">Goodbye {name}</div>
 
-<x bi-include=""
+<x x-include=""
 ```
 
 ## HTML Utilities
