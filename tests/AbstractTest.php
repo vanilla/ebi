@@ -44,7 +44,7 @@ abstract class AbstractTest extends TestCase {
     }
 
     public function doTest($name, $template, $data, $expected) {
-//        if ($name !== '02-components bi-children nested') {
+//        if ($name !== '02-components x-children nested') {
 //            return;
 //        }
 

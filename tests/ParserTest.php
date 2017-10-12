@@ -14,7 +14,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class ParserTest extends TestCase {
     public function testIf() {
-        $tpl = '<p bi-if="empty(items)">There are no items!!!</p>';
+        $tpl = '<p x-if="empty(items)">There are no items!!!</p>';
 
         $compiler = new Compiler();
         $compiler->defineFunction('empty');
@@ -28,7 +28,7 @@ class ParserTest extends TestCase {
     }
 
     public function testEach() {
-        $tpl = '<ul bi-each="people"><li>Hi {name}!</li></ul>';
+        $tpl = '<ul x-each="people"><li>Hi {name}!</li></ul>';
 
         $compiler = new Compiler();
 
@@ -36,7 +36,7 @@ class ParserTest extends TestCase {
     }
 
     public function testEachAs() {
-        $tpl = '<ul bi-each="comments" bi-as="comment"><li>{name}: {comment.body}</li></ul>';
+        $tpl = '<ul x-each="comments" x-as="comment"><li>{name}: {comment.body}</li></ul>';
 
         $compiler = new Compiler();
 
@@ -44,7 +44,7 @@ class ParserTest extends TestCase {
     }
 
     public function testParsing() {
-        $html = '<foo>{this} is a <a if="{foo + bar}" literal s=\'foo bar\'>foo</a>       1 > 2<br> <Time foo.dateInserted /><each "a + b + c"></each></foo>';
+        $html = '<foo>{this} is a <a x-if="{foo + bar}" literal s=\'foo bar\'>foo</a>       1 > 2<br> <Time foo.dateInserted /><each "a + b + c"></each></foo>';
 
         $parser = xml_parser_create_ns('UTF-8', ':');
 

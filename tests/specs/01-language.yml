@@ -1,8 +1,8 @@
 overview: Basic tests for template language features.
 tests:
-  - name: bi-if
+  - name: x-if
     template: >
-      <p bi-if="empty(items)">empty</p>
+      <p x-if="empty(items)">empty</p>
     tests:
       - name: no data
         expected: '<p>empty</p>'
@@ -13,10 +13,10 @@ tests:
       - name: has data
         expected: ''
         data: { items: [1] }
-  - name: bi-if else
+  - name: x-if else
     template: |
-      <div bi-if="signedIn">Welcome!</div>
-      <div bi-else>Sign in to participate.</div>
+      <div x-if="signedIn">Welcome!</div>
+      <div x-else>Sign in to participate.</div>
     tests:
       - name: 'true'
         data: { signedIn: true }
@@ -24,9 +24,9 @@ tests:
       - name: 'false'
         data: { signedIn: false }
         expected: '<div>Sign in to participate.</div>'
-  - name: bi-each
+  - name: x-each
     template: |
-      <ul bi-each="people"><li>Hi {name}!</li></ul>
+      <ul x-each="people"><li>Hi {name}!</li></ul>
     tests:
       - name: no data
         data: { }
@@ -37,7 +37,7 @@ tests:
             - { name: you }
             - { name: us }
         expected: '<ul><li>Hi you!</li><li>Hi us!</li></ul>'
-  - name: bi-each bi-as
+  - name: x-each x-as
     data:
       name: 'How'
       comments:
@@ -46,35 +46,35 @@ tests:
     tests:
       - name: item
         template: |
-          <ul bi-each="comments" bi-as="comment"><li>{name}: {comment.body}</li></ul>
+          <ul x-each="comments" x-as="comment"><li>{name}: {comment.body}</li></ul>
         expected: '<ul><li>How: do I?</li><li>How: do you?</li></ul>'
       - name: with index
         template: |
-          <ul bi-each="comments" bi-as="i comment"><li>{i} {name}: {comment.body}</li></ul>
+          <ul x-each="comments" x-as="i comment"><li>{i} {name}: {comment.body}</li></ul>
         expected: '<ul><li>0 How: do I?</li><li>1 How: do you?</li></ul>'
       - name: 'with index & this'
         template: |
-          <ul bi-each="comments" bi-as="i this"><li>{i}: {body}</li></ul>
+          <ul x-each="comments" x-as="i this"><li>{i}: {body}</li></ul>
         expected: '<ul><li>0: do I?</li><li>1: do you?</li></ul>'
-  - name: bi-each bi-empty
+  - name: x-each x-empty
     template: >
-      <ul bi-each="this"><li>{b}</li><li bi-empty>empty</li></ul>
+      <ul x-each="this"><li>{b}</li><li x-empty>empty</li></ul>
     tests:
-      - name: bi-with data
+      - name: x-with data
         data: [ 'a' ]
         expected: '<ul><li>a</li></ul>'
       - name: no data
         data: []
         expected: '<ul><li>empty</li></ul>'
-  - name: bi-with
-    template: '<div bi-with="user">Hi {name}</div>'
+  - name: x-with
+    template: '<div x-with="user">Hi {name}</div>'
     data: { name: parent, user: { name: child } }
     expected: '<div>Hi child</div>'
-  - name: bi-literal
-    template: '<code bi-literal>Hello <b bi-literal>{username}</b> a > b</code>'
+  - name: x-literal
+    template: '<code x-literal>Hello <b x-literal>{username}</b> a > b</code>'
     data: []
-    expected: '<code>Hello <b bi-literal>{username}</b> a &gt; b</code>'
+    expected: '<code>Hello <b x-literal>{username}</b> a &gt; b</code>'
   - name: x
-    template: '<x bi-if="signedIn">Welcome back</x>'
+    template: '<x x-if="signedIn">Welcome back</x>'
     data: {signedIn: true}
     expected: 'Welcome back'

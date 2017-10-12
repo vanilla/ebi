@@ -1,43 +1,43 @@
 overview: Basic tests for template language features.
 tests:
-  - name: bi-component
+  - name: x-component
     template: >
-      <div bi-component="foo">Hello {name}!</div><foo name="{foo}" />
+      <div x-component="foo">Hello {name}!</div><foo name="{foo}" />
     expected: <div>Hello Bar!</div>
     data: {foo: 'Bar', name: 'Baz', child: {name: 'Frank'}}
     tests:
-      - name: default bi-with
-        template: <div bi-component="foo">Hello {name}!</div><foo />
+      - name: default x-with
+        template: <div x-component="foo">Hello {name}!</div><foo />
         expected: <div>Hello Baz!</div>
-      - name: bi-with
-        template: <div bi-component="foo">Hello {name}!</div><foo bi-with="child" />
+      - name: x-with
+        template: <div x-component="foo">Hello {name}!</div><foo x-with="child" />
         expected: <div>Hello Frank!</div>
-      - name: overridden bi-with
+      - name: overridden x-with
         template: >
-          <div bi-component="foo">Hello {name}{punc ?: "!"}</div><foo bi-with="child" punc="?" />
+          <div x-component="foo">Hello {name}{punc ?: "!"}</div><foo x-with="child" punc="?" />
         expected: <div>Hello Frank?</div>
-      - name: bi-include
+      - name: x-include
         template: >
-          <div bi-component="bar">Hello {name}!</div><x bi-include="foo" name="{foo}" />
-  - name: bi-children
+          <div x-component="bar">Hello {name}!</div><x x-include="foo" name="{foo}" />
+  - name: x-children
     template: >
-      <div bi-component="page"><h1 bi-children/></div><page>Hello {name}!</page>
+      <div x-component="page"><h1 x-children/></div><page>Hello {name}!</page>
     data: {name: 'Sam'}
     expected: <div><h1>Hello Sam!</h1></div>
     tests:
       - name: named child
         template: >
-          <page><x bi-block="greet">Hello {name}!</x></page><div bi-component="page"><h1 bi-children="greet" /></div>
-  - name: bi-children nested
+          <page><x x-block="greet">Hello {name}!</x></page><div x-component="page"><h1 x-children="greet" /></div>
+  - name: x-children nested
     data: [{name: 'Frank'}, {name: 'Joe'}]
     template: >-
-      <li bi-component="row" id="{id}"><x bi-children /></li><ul bi-each="this" bi-as="i j"><row id="{i}">{j.name}</row></ul>
+      <li x-component="row" id="{id}"><x x-children /></li><ul x-each="this" x-as="i j"><row id="{i}">{j.name}</row></ul>
     expected: >-
       <ul><li id="0">Frank</li><li id="1">Joe</li></ul>
   - name: unicode
     data: []
     template: >-
-      <span bi-component="flyout-arrow" class="flyout-arrow">▾</span><flyout-arrow />
+      <span x-component="flyout-arrow" class="flyout-arrow">▾</span><flyout-arrow />
     expected: >-
       <span class="flyout-arrow">▾</span>
 

@@ -12,18 +12,18 @@ use DOMElement;
 use DOMNode;
 
 class Compiler {
-    const T_IF = 'bi-if';
-    const T_EACH = 'bi-each';
-    const T_WITH = 'bi-with';
-    const T_LITERAL = 'bi-literal';
-    const T_AS = 'bi-as';
-    const T_COMPONENT = 'bi-component';
-    const T_CHILDREN = 'bi-children';
-    const T_BLOCK = 'bi-block';
-    const T_ELSE = 'bi-else';
-    const T_EMPTY = 'bi-empty';
+    const T_IF = 'x-if';
+    const T_EACH = 'x-each';
+    const T_WITH = 'x-with';
+    const T_LITERAL = 'x-literal';
+    const T_AS = 'x-as';
+    const T_COMPONENT = 'x-component';
+    const T_CHILDREN = 'x-children';
+    const T_BLOCK = 'x-block';
+    const T_ELSE = 'x-else';
+    const T_EMPTY = 'x-empty';
     const T_X = 'x';
-    const T_INCLUDE = 'bi-include';
+    const T_INCLUDE = 'x-include';
 
     protected static $special = [
         self::T_COMPONENT => 1,
@@ -899,7 +899,7 @@ class Compiler {
     /**
      * Find a special node in relation to another node.
      *
-     * This method is used to find things such as bi-empty and bi-else elements.
+     * This method is used to find things such as x-empty and x-else elements.
      *
      * @param DOMElement $node The node to search in relation to.
      * @param string $attribute The name of the attribute to search for.
