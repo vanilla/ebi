@@ -30,13 +30,13 @@ class Compiler {
         self::T_IF => 2,
         self::T_ELSE => 3,
         self::T_EACH => 4,
-        self::T_AS => 5,
-        self::T_EMPTY => 6,
-        self::T_CHILDREN => 8,
-        self::T_INCLUDE => 9,
-        self::T_WITH => 10,
-        self::T_BLOCK => 11,
-        self::T_LITERAL => 12
+        self::T_EMPTY => 5,
+        self::T_CHILDREN => 6,
+        self::T_INCLUDE => 7,
+        self::T_WITH => 8,
+        self::T_BLOCK => 9,
+        self::T_LITERAL => 10,
+        self::T_AS => 11,
     ];
 
     protected static $htmlTags = [
@@ -860,10 +860,16 @@ class Compiler {
     protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $this->compileTagComment($node, $attributes, $special, $out);
         $with = $this->expr($special[self::T_WITH]->value, $out);
-        unset($special[self::T_WITH]);
 
         $out->depth(+1);
-        $out->pushScope(['this' => $out->depthName('props')]);
+        $scope = ['this' => $out->depthName('props')];
+        if (!empty($special[self::T_AS]) && preg_match('`^([a-z0-9]+)$`', $special[self::T_AS]->value, $m)) {
+            // The template specified an x-as attribute to alias the with expression.
+            $scope = [$m[1] => $out->depthName('props')];
+        }
+        unset($special[self::T_WITH], $special[self::T_AS]);
+
+        $out->pushScope($scope);
         $out->appendCode('$'.$out->depthName('props')." = $with;\n");
 
         $this->compileSpecialNode($node, $attributes, $special, $out);

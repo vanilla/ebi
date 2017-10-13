@@ -203,7 +203,7 @@ echo '<div>',
 
 #### x-with x-as
 
-You can give an alias to the data referenced with `x-with` so that you can still access the parent data within the block. A good use for this is for performing a calculation on some data and assigning it to a variable. 
+You can give an alias to the data referenced with `x-with` so that you can still access the parent data within the block. A good use for this is for performing a calculation on some data and assigning it to a variable.
 
 ```html
 <x x-with="trim(ucfirst(sentence))" x-as="title"><h1 x-if="!empty(title)">{title}</h1></x>
