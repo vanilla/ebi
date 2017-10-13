@@ -17,4 +17,8 @@ class TestEbi extends Ebi {
         $cachePath = __DIR__.'/cache/'.trim(strrchr(is_object($class) ? get_class($class) : $class, '\\'), '\\');
         parent::__construct($this->loader, $cachePath);
     }
+
+    public function getCachePath() {
+        return $this->cachePath;
+    }
 }

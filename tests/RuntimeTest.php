@@ -44,4 +44,37 @@ class RuntimeTest extends AbstractTest {
 
         $ebi->call('missing', 'foo');
     }
+
+    /**
+     * A missing component should not be cached.
+     */
+    public function testCacheMissingComponent() {
+        $ebi = new TestEbi($this);
+
+        $component = 'fooz';
+        $cacheKey = $ebi->getTemplateLoader()->cacheKey($component);
+        $cachePath = $ebi->getCachePath()."/$cacheKey.php";
+
+        $this->assertFileNotExists($cachePath);
+
+        $ebi->lookup($component);
+
+        $this->assertFileNotExists($cachePath);
+    }
+
+    /**
+     * A defined component should be returned when looked up with any namespace.
+     */
+    public function testComponentNamespaceStripping() {
+        $ebi = new TestEbi($this);
+
+        $fn = function ($props, $children = []) {
+
+        };
+
+        $ebi->defineComponent('foo', $fn);
+
+        $component = $ebi->lookup('bar:foo');
+        $this->assertSame($fn, $component);
+    }
 }

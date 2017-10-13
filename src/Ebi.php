@@ -10,30 +10,25 @@ namespace Ebi;
 
 class Ebi {
     /**
-     * @var TemplateLoaderInterface
-     */
-    private $templateLoader;
-
-    /**
      * @var string
      */
-    private $cachePath;
-
-    /**
-     * @var Compiler
-     */
-    private $compiler;
-
-    /**
-     * @var callable[]
-     */
-    private $components = [];
-
+    protected $cachePath;
     /**
      * @var callable[]
      */
     protected $functions;
-
+    /**
+     * @var TemplateLoaderInterface
+     */
+    private $templateLoader;
+    /**
+     * @var Compiler
+     */
+    private $compiler;
+    /**
+     * @var callable[]
+     */
+    private $components = [];
     /**
      * @var array
      */
@@ -79,6 +74,21 @@ class Ebi {
         $this->defineFunction('@class', [$this, 'attributeClass']);
     }
 
+    /**
+     * Register a runtime function.
+     *
+     * @param string $name The name of the function.
+     * @param callable $function The function callback.
+     */
+    public function defineFunction($name, $function = null) {
+        if ($function === null) {
+            $function = $name;
+        }
+
+        $this->functions[strtolower($name)] = $function;
+        $this->compiler->defineFunction($name, $function);
+    }
+
     private function mb($func) {
         return function_exists("mb_$func") ? "mb_$func" : $func;
     }
@@ -99,27 +109,6 @@ class Ebi {
     }
 
     /**
-     * Render a component to a string.
-     *
-     * @param string $component The name of the component to render.
-     * @param array ...$args Arguments to pass to the component.
-     * @return string|null Returns the rendered component or **null** if the component was not found.
-     */
-    public function render($component, ...$args) {
-        if ($callback = $this->lookup($component)) {
-            ob_start();
-            $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
-            call_user_func($callback, ...$args);
-            error_reporting($errs);
-            $str = ob_get_clean();
-            return $str;
-        } else {
-            trigger_error("Could not find component $component.", E_USER_NOTICE);
-            return null;
-        }
-    }
-
-    /**
      * Lookup a component with a given name.
      *
      * @param string $component The component to lookup.
@@ -127,86 +116,97 @@ class Ebi {
      */
     public function lookup($component) {
         $component = strtolower($component);
+        $key = $this->componentKey($component);
 
-        if (!array_key_exists($component, $this->components)) {
+        if (!array_key_exists($key, $this->components)) {
             $this->loadComponent($component);
         }
 
-        if (isset($this->components[$component])) {
-            return $this->components[$component];
+        if (isset($this->components[$key])) {
+            return $this->components[$key];
         } else {
+            // Mark a tombstone to the component array so it doesn't keep getting loaded.
+            $this->components[$key] = null;
             return null;
         }
     }
 
     /**
-     * Register a component.
+     * Strip the namespace off a component name to get the component key.
      *
-     * @param string $name The name of the component to register.
-     * @param callable $component The component function.
+     * @param string $component The full name of the component with a possible namespace.
+     * @return string Returns the component key.
      */
-    public function defineComponent($name, callable $component) {
-        $this->components[$name] = $component;
-    }
-
-    /**
-     * Register a runtime function.
-     *
-     * @param string $name The name of the function.
-     * @param callable $function The function callback.
-     */
-    public function defineFunction($name, $function = null) {
-        if ($function === null) {
-            $function = $name;
+    protected function componentKey($component) {
+        if (false !== $pos = strpos($component, ':')) {
+            $component = substr($component, $pos + 1);
         }
-
-        $this->functions[strtolower($name)] = $function;
-        $this->compiler->defineFunction($name, $function);
-    }
-
-    /**
-     * Call a function registered with **defineFunction()**.
-     *
-     * If a static or global function is registered then it's simply rendered in the compiled template.
-     * This method is for closures or callbacks.
-     *
-     * @param string $name The name of the registered function.
-     * @param array ...$args The function's argument.
-     * @return mixed Returns the result of the function
-     * @throws RuntimeException Throws an exception when the function isn't found.
-     */
-    public function call($name, ...$args) {
-        if (!isset($this->functions[$name])) {
-            throw new RuntimeException("Call to undefined function $name.", 500);
-        } else {
-            return $this->functions[$name](...$args);
-        }
+        return strtolower($component);
     }
 
     /**
      * Load a component.
      *
      * @param string $component The name of the component to load.
-     * @return callable|null Returns the component.
+     * @return callable|null Returns the component or **null** if the component isn't found.
      */
     protected function loadComponent($component) {
         $cacheKey = $this->templateLoader->cacheKey($component);
+        // The template loader can tell us a template doesn't exist when giving the cache key.
+        if (empty($cacheKey)) {
+            return null;
+        }
+
         $cachePath = "{$this->cachePath}/$cacheKey.php";
+        $componentKey = $this->componentKey($component);
 
         if (!file_exists($cachePath)) {
             $src = $this->templateLoader->load($component);
-
-            $php = $this->compiler->compile($src, ['basename' => $component]);
-            $comment = "/*\n".str_replace('*/', '❄/', trim($src))."\n*/";
-
-            $this->filePutContents($cachePath, "<?php\n$comment\n$php");
+            return $this->compile($componentKey, $src, $cacheKey);
+        } else {
+            return $this->includeComponent($componentKey, $cachePath);
         }
+    }
 
+    /**
+     * Compile a component from source, cache it and include it.
+     *
+     * @param string $component The name of the component.
+     * @param string $src The component source.
+     * @param string $cacheKey The cache key of the component.
+     * @return callable|null Returns the compiled component closure.
+     */
+    public function compile($component, $src, $cacheKey) {
+        $cachePath = "{$this->cachePath}/$cacheKey.php";
+        $component = strtolower($component);
+
+        $php = $this->compiler->compile($src, ['basename' => $component]);
+        $comment = "/*\n".str_replace('*/', '❄/', trim($src))."\n*/";
+
+        $this->filePutContents($cachePath, "<?php\n$comment\n$php");
+
+        return $this->includeComponent($component, $cachePath);
+    }
+
+    /**
+     * Include a cached component.
+     *
+     * @param string $component The component key.
+     * @param string $cachePath The path to the component.
+     * @return callable|null Returns the component function or **null** if the component wasn't properly defined.
+     */
+    private function includeComponent($component, $cachePath) {
+        unset($this->components[$component]);
         $fn = $this->requireFile($cachePath);
 
-        if (is_callable($fn) && basename($cacheKey, '.php') === $component) {
+        if (isset($this->components[$component])) {
+            return $this->components[$component];
+        } elseif (is_callable($fn)) {
             $this->defineComponent($component, $fn);
             return $fn;
+        } else {
+            $this->components[$component] = null;
+            return null;
         }
     }
 
@@ -251,10 +251,63 @@ class Ebi {
     }
 
     /**
+     * Register a component.
+     *
+     * @param string $name The name of the component to register.
+     * @param callable $component The component function.
+     */
+    public function defineComponent($name, callable $component) {
+        $this->components[$name] = $component;
+    }
+
+    /**
+     * Render a component to a string.
+     *
+     * @param string $component The name of the component to render.
+     * @param array ...$args Arguments to pass to the component.
+     * @return string|null Returns the rendered component or **null** if the component was not found.
+     */
+    public function render($component, ...$args) {
+        if ($callback = $this->lookup($component)) {
+            ob_start();
+            $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
+            call_user_func($callback, ...$args);
+            error_reporting($errs);
+            $str = ob_get_clean();
+            return $str;
+        } else {
+            trigger_error("Could not find component $component.", E_USER_NOTICE);
+            return null;
+        }
+    }
+
+    /**
+     * Call a function registered with **defineFunction()**.
+     *
+     * If a static or global function is registered then it's simply rendered in the compiled template.
+     * This method is for closures or callbacks.
+     *
+     * @param string $name The name of the registered function.
+     * @param array ...$args The function's argument.
+     * @return mixed Returns the result of the function
+     * @throws RuntimeException Throws an exception when the function isn't found.
+     */
+    public function call($name, ...$args) {
+        if (!isset($this->functions[$name])) {
+            throw new RuntimeException("Call to undefined function $name.", 500);
+        } else {
+            return $this->functions[$name](...$args);
+        }
+    }
+
+    /**
      * Render a variable appropriately for CSS.
      *
-     * @param $expr
-     * @return string
+     * This is a convenience runtime function.
+     *
+     * @param string|array $expr A CSS class, an array of CSS classes, or an associative array where the keys are class
+     * names and the values are truthy conditions to include the class (or not).
+     * @return string Returns a space-delimited CSS class string.
      */
     public function attributeClass($expr) {
         if (is_array($expr)) {
