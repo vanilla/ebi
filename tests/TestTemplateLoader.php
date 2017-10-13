@@ -23,7 +23,7 @@ class TestTemplateLoader implements TemplateLoaderInterface {
      * @return string Returns the unique key of the component.
      */
     public function cacheKey($component) {
-        return $component;
+        return isset($this->templates[$component]) ? $component : null;
     }
 
     /**
