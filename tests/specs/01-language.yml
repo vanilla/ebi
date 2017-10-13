@@ -60,7 +60,7 @@ tests:
     template: >
       <ul x-each="this"><li>{b}</li><li x-empty>empty</li></ul>
     tests:
-      - name: x-with data
+      - name: with data
         data: [ 'a' ]
         expected: '<ul><li>a</li></ul>'
       - name: no data
@@ -70,6 +70,11 @@ tests:
     template: '<div x-with="user">Hi {name}</div>'
     data: { name: parent, user: { name: child } }
     expected: '<div>Hi child</div>'
+    tests:
+      - name: x-as
+        template: '<div x-with="user" x-as="u">{title} {u.name}</div>'
+        data: { title: Mr, user: { name: Frank } }
+        expected: '<div>Mr Frank</div>'
   - name: x-literal
     template: '<code x-literal>Hello <b x-literal>{username}</b> a > b</code>'
     data: []
