@@ -85,7 +85,7 @@ There are no items!
 ```
 
 ```php
-if (empty($data['items'])) {
+if (empty($props['items'])) {
     echo "<p>There are no items!</p>";
 }
 ```
@@ -104,7 +104,7 @@ Add an else element in conjunction with an if element.
 ```
 
 ```php
-if ($data['signedIn']) {
+if ($props['signedIn']) {
     echo '<div>Welcome!</div>';
 } else {
     echo '<div>Sign in to participate.</div>';
@@ -123,16 +123,16 @@ Loop over elements.
 
 ```php
 echo '<ul>';
-foreach ($data['people'] as $data1) {
+foreach ($props['people'] as $props1) {
     echo 'Hi ',
-        $this->escape($data1['first']),
+        $this->escape($props1['first']),
         ' ',
-        $this->escape($data1['last']);
+        $this->escape($props1['last']);
 }
 echo '</ul>';
 ```
 
-### x-as
+#### x-each x-as
 
 Name the iterator element so that you can still reference the parent.
 
@@ -144,11 +144,11 @@ Name the iterator element so that you can still reference the parent.
 
 ```php
 echo '<ul>';
-foreach ($conext['comments'] as $i1 => $data1) {
+foreach ($conext['comments'] as $i1 => $props1) {
     echo '<li>',
-        $this->escape($data['name']),
+        $this->escape($props['name']),
         ': ',
-        $this->escape($data1['body']),
+        $this->escape($props1['body']),
         ' #',
         $this->escape($i1)
         '</li>';
@@ -171,12 +171,12 @@ Specify a template when there are no items.
 
 ```php
 echo '<ul>';
-if (empty($data['messages'])) {
+if (empty($props['messages'])) {
     echo '<li>There are no messages.</li>';
 } else {
-    foreach ($data['message'] as $i1 => $data1) {
+    foreach ($props['message'] as $i1 => $props1) {
         echo '<li>',
-            $this->escape($data1['body']),
+            $this->escape($props1['body']),
             '</li>';
     }
 }
@@ -194,11 +194,26 @@ Pass an item into a template.
 ```
 
 ```php
-$data1 = $data['user'];
+$props1 = $props['user'];
 echo '<div>',
     'Hello ',
-    $this->escape($data1['name']),
+    $this->escape($props1['name']),
     '</div>';
+```
+
+#### x-with x-as
+
+You can give an alias to the data referenced with `x-with` so that you can still access the parent data within the block. A good use for this is for performing a calculation on some data and assigning it to a variable.
+
+```html
+<x x-with="trim(ucfirst(sentence))" x-as="title"><h1 x-if="!empty(title)">{title}</h1></x>
+```
+
+```php
+$props1 = trim(ucfirst($props['sentence']));
+if (!empty($props1)) {
+    echo $this->escape($props1);
+}
 ```
 
 ### x-literal
@@ -255,7 +270,7 @@ $this->register('long-date', function ($props) {
         '</time>';
 });
 
-$this->render('long-date', ['date' => $data['dateInserted']]);
+$this->render('long-date', ['date' => $props['dateInserted']]);
 ```
 
 Components must begin with a capital letter or include a dash or dot. Otherwise they will be rendered as normal HTML tags.
@@ -319,7 +334,21 @@ Sometimes you want to include a component dynamically. In this case you can use 
 <div x-component="hello">Hello {name}</div>
 <div x-component="goodbye">Goodbye {name}</div>
 
-<x x-include=""
+<x x-include="salutation" />
+```
+
+```php
+$this->register('hello', function ($props) {
+    echo 'Hello ',
+        $this->escape($props['name']);
+});
+
+$this->register('goodbye', function ($props) {
+    echo 'Goodbye ',
+        $this->escape($props['name']);
+});
+
+$this->write($props['salutation'], $props);
 ```
 
 ## HTML Utilities
@@ -364,7 +393,7 @@ Any HTML comments that you declare in the template will be added as PHP comments
 ```
 
 ```php
-function ($data) {
+function ($props) {
     // Do something.
     echo '<p>wut!?</p>';
 };
@@ -382,7 +411,7 @@ $ebi = new Ebi(
     '/path/to/cache'
 );
 
-$ebi->write('component', $data);
+$ebi->write('component', $props);
 ```
 
 In this example an **Ebi** object is constructed and a basic component is written to the output.
