@@ -83,3 +83,7 @@ tests:
     template: '<x x-if="signedIn">Welcome back</x>'
     data: {signedIn: true}
     expected: 'Welcome back'
+    tests:
+      - name: x-literal
+        template: '<x x-literal>Hello <b x-literal>{username}</b> a > b</x>'
+        expected: 'Hello <b x-literal>{username}</b> a &gt; b'
