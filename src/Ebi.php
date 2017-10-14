@@ -403,4 +403,24 @@ class Ebi {
         $this->templateLoader = $templateLoader;
         return $this;
     }
+
+    /**
+     * Get the entire meta array.
+     *
+     * @return array Returns the meta.
+     */
+    public function getMetaArray() {
+        return $this->meta;
+    }
+
+    /**
+     * Set the entire meta array.
+     *
+     * @param array $meta The new meta array.
+     * @return $this
+     */
+    public function setMetaArray(array $meta) {
+        $this->meta = $meta;
+        return $this;
+    }
 }
