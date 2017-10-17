@@ -48,6 +48,7 @@ class Ebi {
 
         $this->defineFunction('abs');
         $this->defineFunction('ceil');
+        $this->defineFunction('componentExists', [$this, 'componentExists']);
         $this->defineFunction('count');
         $this->defineFunction('formatDate', [$this, 'formatDate']);
         $this->defineFunction('empty');
@@ -132,6 +133,23 @@ class Ebi {
     }
 
     /**
+     * Check to see if a component exists.
+     *
+     * @param string $component The name of the component.
+     * @param bool $loader Whether or not to use the component loader or just look in the component cache.
+     * @return bool Returns **true** if the component exists or **false** otherwise.
+     */
+    public function componentExists($component, $loader = true) {
+        $componentKey = $this->componentKey($component);
+        if (array_key_exists($componentKey, $this->components)) {
+            return $this->components[$componentKey] !== null;
+        } elseif ($loader) {
+            return !empty($this->templateLoader->cacheKey($component));
+        }
+        return false;
+    }
+
+    /**
      * Strip the namespace off a component name to get the component key.
      *
      * @param string $component The full name of the component with a possible namespace.
@@ -166,6 +184,17 @@ class Ebi {
         } else {
             return $this->includeComponent($componentKey, $cachePath);
         }
+    }
+
+    /**
+     * Check to see if a specific cache key exists in the cache.
+     *
+     * @param string $cacheKey The cache key to check.
+     * @return bool Returns **true** if there is a cache key at the file or **false** otherwise.
+     */
+    public function cacheKeyExists($cacheKey) {
+        $cachePath = "{$this->cachePath}/$cacheKey.php";
+        return file_exists($cachePath);
     }
 
     /**
