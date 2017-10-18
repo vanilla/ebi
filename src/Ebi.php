@@ -22,7 +22,7 @@ class Ebi {
      */
     private $templateLoader;
     /**
-     * @var Compiler
+     * @var CompilerInterface
      */
     private $compiler;
     /**

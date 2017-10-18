@@ -506,22 +506,6 @@ class Compiler {
     }
 
     /**
-     * Call a registered function.
-     *
-     * @param $name
-     * @param array ...$args
-     * @return null
-     * @see Ebi::addFunction()
-     */
-    public function call($name, ...$args) {
-        if (isset($this->functions[$name])) {
-            return $this->functions[$name](...$args);
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * @param DOMElement $node
      */
     protected function splitAttributes(DOMElement $node) {
