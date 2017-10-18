@@ -1,4 +1,11 @@
-## The Ebi Template Language
+# The Ebi Template Language
+
+[![Build Status](https://img.shields.io/travis/vanilla/ebi.svg?style=flat)](https://travis-ci.org/vanilla/ebi)
+[![Coverage](https://img.shields.io/scrutinizer/coverage/g/vanilla/ebi.svg?style=flat)](https://scrutinizer-ci.com/g/vanilla/ebi/)
+[![Packagist Version](https://img.shields.io/packagist/v/vanilla/ebi.svg?style=flat)](https://packagist.org/packages/vanilla/ebi)
+![MIT License](https://img.shields.io/packagist/l/vanilla/ebi.svg?style=flat)
+[![CLA](https://cla-assistant.io/readme/badge/vanilla/ebi)](https://cla-assistant.io/vanilla/ebi)
+
 
 The Ebi template language uses basic HTML and special attributes for a simple yet powerful template language.
 
