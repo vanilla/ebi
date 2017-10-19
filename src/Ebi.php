@@ -73,6 +73,18 @@ class Ebi {
         $this->defineFunction('urlencode', 'rawurlencode');
 
         $this->defineFunction('@class', [$this, 'attributeClass']);
+
+        // Define a simple component not found component to help troubleshoot.
+        $this->defineComponent('@component-not-found', function ($props) {
+            echo '<!-- Component "'.htmlspecialchars($props['component']).'" not found. -->';
+        });
+
+        // Define a simple component exception.
+        $this->defineComponent('@exception', function ($props) {
+            echo "\n<!--\nException in component \"".htmlspecialchars($props['component'])."\"\n".
+                htmlspecialchars($props['message'])."\n-->\n";
+
+        });
     }
 
     /**
@@ -102,10 +114,18 @@ class Ebi {
      */
     public function write($component, ...$args) {
         $component = strtolower($component);
-        if ($callback = $this->lookup($component)) {
-            call_user_func($callback, ...$args);
-        } else {
-            trigger_error("Could not find component $component.", E_USER_NOTICE);
+
+        try {
+            $callback = $this->lookup($component);
+
+            if (is_callable($callback)) {
+                call_user_func($callback, ...$args);
+            } else {
+                $this->write('@component-not-found', ['component' => $component]);
+            }
+        } catch (\Exception $ex) {
+            $this->write('@exception', ['message' => $ex->getMessage(), 'code', $ex->getCode(), 'component' => $component]);
+            return;
         }
     }
 
@@ -308,6 +328,16 @@ class Ebi {
             trigger_error("Could not find component $component.", E_USER_NOTICE);
             return null;
         }
+    }
+
+    /**
+     * Set the error reporting appropriate for template rendering.
+     *
+     * @return int Returns the previous error level.
+     */
+    public function setErrorReporting() {
+        $errs = error_reporting(error_reporting() & ~E_NOTICE & ~E_WARNING);
+        return $errs;
     }
 
     /**
