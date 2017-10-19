@@ -118,4 +118,32 @@ class RuntimeTest extends AbstractTest {
         $fn = $ebi->compile('cc-exists', 'Hello world!', 'cc-exists1');
         $this->assertTrue($ebi->cacheKeyExists('cc-exists1'));
     }
+
+    /**
+     * Trying to write a component that doesn't exist should output the "@component-not-found" component.
+     */
+    public function testComponentNotFound() {
+        $ebi = new TestEbi($this);
+
+        $this->expectOutputString('<!-- Component "foo" not found. -->');
+        $ebi->write('foo');
+    }
+
+    /**
+     * A generic exception encountered when writing a component should write out the "@exception" component.
+     */
+    public function testComponentException() {
+        $ebi = new TestEbi($this);
+        $ebi->defineComponent('foo', function () {
+            throw new \Exception('This is my exception!');
+        });
+
+        $this->expectOutputString('
+<!--
+Exception in component "foo"
+This is my exception!
+-->
+');
+        $ebi->write('foo');
+    }
 }

@@ -12,6 +12,11 @@ use Ebi\Ebi;
 class TestEbi extends Ebi {
     public $loader;
 
+    /**
+     * TestEbi constructor.
+     *
+     * @param string|object $class
+     */
     public function __construct($class) {
         $this->loader = new TestTemplateLoader();
         $cachePath = __DIR__.'/cache/'.trim(strrchr(is_object($class) ? get_class($class) : $class, '\\'), '\\');
