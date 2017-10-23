@@ -130,6 +130,27 @@ class RuntimeTest extends AbstractTest {
     }
 
     /**
+     * A specific tag function should be called on attributes of that tag, but not other tags.
+     */
+    public function testTagFunction() {
+        $ebi = new TestEbi($this);
+
+        $tpl = <<<EOT
+<link href="foo.css" rel="stylesheet"/><a href="bar.html'" />
+EOT;
+
+        $ebi->defineFunction('@link:href', function ($v) {
+            return '/'.$v;
+        });
+
+        $ebi->compile('test-tag-function', $tpl, 'test-tag-function');
+
+        $r = $ebi->render('test-tag-function');
+
+        $this->assertSame('<link href="/foo.css" rel="stylesheet" /><a href="bar.html\'" />', $r);
+    }
+
+    /**
      * A generic exception encountered when writing a component should write out the "@exception" component.
      */
     public function testComponentException() {
