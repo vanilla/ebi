@@ -734,6 +734,11 @@ class Compiler {
             // Check for an attribute expression.
             if ($this->isExpression($attribute->value)) {
                 $out->echoCode('htmlspecialchars('.$this->expr(substr($attribute->value, 1, -1), $out, $attribute).')');
+            } elseif (null !== $fn = $this->getAttributeFunction($attribute)) {
+                $value  = call_user_func($fn, var_export($attribute->value, true));
+
+                $out->echoCode("htmlspecialchars($value)");
+
             } else {
                 $out->echoLiteral(htmlspecialchars($attribute->value));
             }
