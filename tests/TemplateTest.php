@@ -31,7 +31,7 @@ class TemplateTest extends AbstractTest {
 
         $rendered = $this->renderFixture('x-component', $data);
 
-        $this->assertEquals('<time datetime="2001-01-01T00:00:00-05:00">2001-01-01T00:00:00-05:00</time>', trim($rendered));
+        $this->assertEquals('<time datetime="2001-01-01T00:00:00-05:00">Mon, 01 Jan 2001 00:00:00 -0500</time>', trim($rendered));
     }
 
     /**
