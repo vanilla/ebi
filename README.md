@@ -46,11 +46,26 @@ $ebi->write(...);
 
 The meta array is a good place to put configuration information that is separate from template data. Since it is global to all components you can access it from within any component regardless of scope.
 
+### Operators
+
+When writing fields you aren't limited to just field names. A fairly rich expression syntax is supported.
+
+| Type | Operators |
+| ---- | --------- |
+| Arithmetic | `+,-,*,/,%,**` |
+| Bitwise | `|,&,^` |
+| Comparison | `==,===,!=,!==, <,>,<=,>=,matches (regex)` |
+| Logical | `||,!,&&` |
+| String Concatenation | `~` |
+| Array | `in, not in` |
+| Range | `..` |
+| Ternary | `cond ? 'yes' : no`,`cond ?: 'no'`,`cond ? 'yes' |
+
 ### Functions
 
 Functions are called using the `functionName()` syntax. The following functions are included by default:
 
-| function   | description
+| Function   | Description
 |------------|-------------
 | count      | Count the number of items in an array. 
 | empty      | Check to see if a string or array is empty.
@@ -66,6 +81,19 @@ Functions are called using the `functionName()` syntax. The following functions 
 | ucase      | Uppercase a string.
 | ucfirst    | Uppercase the first letter of a word.
 | ucwords    | Uppercase the first letter in each word of a string.
+
+### Literals
+
+You can include literals in expressions too.
+
+| Type | Notation | Example |
+| ---- | -------- | ------- |
+| string | Enclose in single or double quotes. | 'hello' |
+| number | Write the number without quotes. | 123 |
+| array | Use JSON notation. | [1, 2, 3] |
+| object | Use JSON notation without quoted keys. | { foo: 'bar' } |
+| boolean | Use the `true` and `false` constants. | true |
+| null | Use `null` constant. | null |
 
 ### Unescaping Data
 
@@ -235,7 +263,58 @@ Don't parse templates within a literal.
 echo '<code>Hello <b x-literal>{username}</b></code>';
 ```
 
-### The "x" Tag
+## Template Tags
+
+Most of Ebi's functionality uses special attributes. However, there are a couple of special tags supported.
+
+### The `<x-expr>` Tag
+
+Usually, you write expressions by enclosing them in braces (`{..}`). However, braces don't themselves allow brace characters. They also don't allow multi-line expressions. When you have such an expression you can instead enclose it in an `x-expr` tag.
+
+```html
+<x-expr>
+  join(
+    "|",
+    [1, 2, 3]
+  )
+</x-expr>
+```
+
+```php
+echo $this->escape(join('|', [1, 2, 3]);
+```
+
+#### `<x-expr x-unescape>`
+
+If you don't want to escape the output in an `<x-expr>` tag then add the `x-unescape` attribute.
+
+```html
+<x-expr x-unescape>join('>', [1, 2, 3])</x-expr>
+```
+
+```php
+echo join('>', [1, 2, 3]);
+```
+
+#### `<x-expr x-as="...">`
+
+You can also use the `<x-expr>` tag with an `x-as` attribute to create an expression variable that can be used later in the template.
+
+```html
+<x-expr x-as="title">trim(ucfirst(sentence))</x-expr>
+<h1 x-if="!empty(title)">{title}</h1>
+```
+
+```php
+$title = trim(ucfirst($props['sentence']));
+if (!empty($title) {
+    echo '<h1>',
+        $this->escape($title),
+        '</h1>';
+}
+```
+
+### The `<x>` Tag
 
 Sometimes you will want to use an ebi attribute, but don't want to render an HTML tag. In this case you can use the `x` tag which will only render its contents.
 
@@ -257,6 +336,7 @@ Components are a powerful part of Ebi. With components you can make re-usable te
 - Components are lowercase. It is recommended that you use dashes to separate words in component names. Make sure to name your template files in lowercase to avoid issues with case sensitive file systems.
 - Components are used by declaring an HTML element with the component's name. Components create custom tags!
 - You can pass data into components with contributes. If you want to pass all of the current template's data into a component use the `x-with` attribute.
+- It is strongly recommended you don't name your components with an `x-` prefix as that may be used for future functionality.
 
 ### x-component
 
@@ -286,7 +366,7 @@ Components must begin with a capital letter or include a dash or dot. Otherwise 
 
 By default, components inherit the current scope's data. There are a few more things you can do to pass additional data into a component.
 
-#### Pass Data Using `x-with`???
+#### Pass Data Using `x-with`
 
 If you want to pass data other than the current context into a component you use the `x-with` attribute.
 

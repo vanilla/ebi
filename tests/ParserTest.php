@@ -105,4 +105,44 @@ class ParserTest extends TestCase {
 
         $expr = $lang->compile('_.bar', ['_']);
     }
+
+    /**
+     * The `<x-expr>` element allows expressions to be in-lined.
+     */
+    public function testExpressionElement() {
+        $ebi = new TestEbi($this);
+
+        $src = <<<EOT
+<x-expr>
+    join(
+        '|',
+        [1, 2, 3]
+    )
+</x-expr>
+EOT;
+
+        $ebi->compile('expr-elem', $src, 'expr-elem');
+        $r = $ebi->render('expr-elem');
+
+        $this->assertEquals('1|2|3', $r);
+    }
+
+    public function testExpressionElementWithAs() {
+        $ebi = new TestEbi($this);
+
+        $src = <<<EOT
+<x-expr x-as="foo">
+    {
+        a: 1,
+        b: 2
+    }
+</x-expr>{unescape(json_encode(foo))}{bar}
+EOT;
+
+        $ebi->defineFunction('json_encode');
+        $ebi->compile('expr-elem-as', $src, 'expr-elem-as');
+        $r = $ebi->render('expr-elem-as', ['bar' => '!']);
+
+        $this->assertEquals('{"a":1,"b":2}!', $r);
+    }
 }

@@ -24,6 +24,8 @@ class Compiler {
     const T_EMPTY = 'x-empty';
     const T_X = 'x';
     const T_INCLUDE = 'x-include';
+    const T_EXPR = 'x-expr';
+    const T_UNESCAPE = 'x-unescape';
 
     protected static $special = [
         self::T_COMPONENT => 1,
@@ -37,6 +39,7 @@ class Compiler {
         self::T_BLOCK => 9,
         self::T_LITERAL => 10,
         self::T_AS => 11,
+        self::T_UNESCAPE => 12
     ];
 
     protected static $htmlTags = [
@@ -266,17 +269,17 @@ class Compiler {
         };
 
         if (is_string($function)) {
-            $fn = function ($expr) use ($function) {
-                return "$function($expr)";
+            $fn = function (...$args) use ($function) {
+                return $function.'('.implode(', ', $args).')';
             };
         } elseif (is_array($function)) {
             if (is_string($function[0])) {
-                $fn = function ($expr) use ($function) {
-                    return "$function[0]::$function[1]($expr)";
+                $fn = function (...$args) use ($function) {
+                    return "$function[0]::$function[1](".implode(', ', $args).')';
                 };
             } elseif ($function[0] instanceof Ebi) {
-                $fn = function ($expr) use ($function) {
-                    return "\$this->$function[1]($expr)";
+                $fn = function (...$args) use ($function) {
+                    return "\$this->$function[1](".implode(', ', $args).')';
                 };
             }
         }
@@ -445,7 +448,9 @@ class Compiler {
     protected function compileElementNode(DOMElement $node, CompilerBuffer $out) {
         list($attributes, $special) = $this->splitAttributes($node);
 
-        if (!empty($special) || $this->isComponent($node->tagName)) {
+        if ($node->tagName === self::T_EXPR) {
+            $this->compileExpressionNode($node, $attributes, $special, $out);
+        } elseif (!empty($special) || $this->isComponent($node->tagName)) {
             $this->compileSpecialNode($node, $attributes, $special, $out);
         } else {
             $this->compileOpenTag($node, $node->attributes, $out);
@@ -1040,5 +1045,29 @@ class Compiler {
         $out->appendCode("}\n");
 
         $this->compileCloseTag($node, $out, true);
+    }
+
+    /**
+     * Compile an x-expr node.
+     *
+     * @param DOMElement $node The node to compile.
+     * @param array $attributes The node's attributes.
+     * @param array $special An array of special attributes.
+     * @param CompilerBuffer $out The compiler output.
+     */
+    private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $str = $raw = $node->nodeValue;
+        $expr = $this->expr($str, $out);
+
+        if (!empty($special[self::T_AS]) && preg_match('`^([a-z0-9]+)$`', $special[self::T_AS]->value, $m)) {
+            // The template specified an x-as attribute to alias the with expression.
+            $scope = [$m[1] => $out->depthName('props', 1)];
+            $out->pushScope($scope);
+            $out->appendCode('$'.$out->depthName('props', 1)." = $expr;\n");
+        } elseif (!empty($special[self::T_UNESCAPE])) {
+            $out->echoCode($expr);
+        } else {
+            $out->echoCode('htmlspecialchars('.$expr.')');
+        }
     }
 }
