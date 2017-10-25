@@ -27,6 +27,8 @@ class Compiler {
     const T_EXPR = 'x-expr';
     const T_UNESCAPE = 'x-unescape';
 
+    const IDENT_REGEX = '`^([a-z0-9-]+)$`i';
+
     protected static $special = [
         self::T_COMPONENT => 1,
         self::T_IF => 2,
@@ -857,7 +859,7 @@ class Compiler {
 
         $out->depth(+1);
         $scope = ['this' => $out->depthName('props')];
-        if (!empty($special[self::T_AS]) && preg_match('`^([a-z0-9]+)$`', $special[self::T_AS]->value, $m)) {
+        if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
             // The template specified an x-as attribute to alias the with expression.
             $scope = [$m[1] => $out->depthName('props')];
         }
@@ -949,7 +951,7 @@ class Compiler {
         $as = ['', $out->depthName('props', 1)];
         $scope = ['this' => $as[1]];
         if (!empty($special[self::T_AS])) {
-            if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`', $special[self::T_AS]->value, $m)) {
+            if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`i', $special[self::T_AS]->value, $m)) {
                 $scope = [$m[2] => $as[1]];
                 if (!empty($m[1])) {
                     $scope[$m[1]] = $as[0] = $out->depthName('i', 1);
@@ -1059,7 +1061,7 @@ class Compiler {
         $str = $raw = $node->nodeValue;
         $expr = $this->expr($str, $out);
 
-        if (!empty($special[self::T_AS]) && preg_match('`^([a-z0-9]+)$`', $special[self::T_AS]->value, $m)) {
+        if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
             // The template specified an x-as attribute to alias the with expression.
             $scope = [$m[1] => $out->depthName('props', 1)];
             $out->pushScope($scope);
