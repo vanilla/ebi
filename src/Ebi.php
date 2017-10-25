@@ -47,12 +47,23 @@ class Ebi {
         $this->compiler = $compiler ?: new Compiler();
 
         $this->defineFunction('abs');
+        $this->defineFunction('arrayColumn', 'array_column');
+        $this->defineFunction('arrayKeyExists', 'array_key_exists');
+        $this->defineFunction('arrayKeys', 'array_keys');
+        $this->defineFunction('arrayMerge', 'array_merge');
+        $this->defineFunction('arrayMergeRecursive', 'array_merge_recursive');
+        $this->defineFunction('arrayReplace', 'array_replace');
+        $this->defineFunction('arrayReplaceRecursive', 'array_replace_recursive');
+        $this->defineFunction('arrayReverse', 'array_reverse');
+        $this->defineFunction('arrayValues', 'array_values');
+        $this->defineFunction('base64Encode', 'base64_encode');
         $this->defineFunction('ceil');
         $this->defineFunction('componentExists', [$this, 'componentExists']);
         $this->defineFunction('count');
-        $this->defineFunction('formatDate', [$this, 'formatDate']);
         $this->defineFunction('empty');
         $this->defineFunction('floor');
+        $this->defineFunction('formatDate', [$this, 'formatDate']);
+        $this->defineFunction('formatNumber', 'number_format');
         $this->defineFunction('htmlEncode', 'htmlspecialchars');
         $this->defineFunction('join');
         $this->defineFunction('lcase', $this->mb('strtolower'));

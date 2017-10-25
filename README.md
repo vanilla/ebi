@@ -52,35 +52,57 @@ When writing fields you aren't limited to just field names. A fairly rich expres
 
 | Type | Operators |
 | ---- | --------- |
-| Arithmetic | `+,-,*,/,%,**` |
-| Bitwise | `|,&,^` |
-| Comparison | `==,===,!=,!==, <,>,<=,>=,matches (regex)` |
-| Logical | `||,!,&&` |
-| String Concatenation | `~` |
-| Array | `in, not in` |
-| Range | `..` |
-| Ternary | `cond ? 'yes' : no`,`cond ?: 'no'`,`cond ? 'yes' |
+| Arithmetic | +,-,&ast;,/,%,&ast;&ast; |
+| Bitwise | &,&#124;,^ |
+| Comparison | ==,===,!=,!==, <,>,<=,>=,matches |
+| Logical | &&,&#124;&#124;,! |
+| String Concatenation | ~ |
+| Array | in, not in |
+| Range | .. |
+| Ternary | cond ? 'yes' : no<br>cond ?: 'no'<br>cond ? 'yes' |
 
 ### Functions
 
-Functions are called using the `functionName()` syntax. The following functions are included by default:
+Functions are called using the `functionName()` syntax. Ebi provides a set of default functions that map to PHP's standard library.
 
-| Function   | Description
-|------------|-------------
-| count      | Count the number of items in an array. 
-| empty      | Check to see if a string or array is empty.
-| formatDate | Format a date.
-| join       | Join the elements of an array into a string. 
-| lcase      | Lowercase a string.
-| lcfirst    | Lowercase the first letter of a word.
-| ltrim      | Left trim a string.
-| rtrim      | Right trim a string.
-| sprintf    | Return a formatted string.
-| substr     | Return a part of a string.
-| trim       | Trim a string.
-| ucase      | Uppercase a string.
-| ucfirst    | Uppercase the first letter of a word.
-| ucwords    | Uppercase the first letter in each word of a string.
+| Function        | Description | PHP Function |
+|---------------- | ----------- | ------------ |
+| abs             | Absolute value of a number. | [abs](https://secure.php.net/manual/en/function.abs.php)
+| arrayColumn     | Return the values from a single column in the input array. | [array_column](https://secure.php.net/manual/en/function.array-column.php)
+| arrayKeyExists  | Checks if the given key or index exists in the array. | [array_key_exists](https://secure.php.net/manual/en/function.array-key-exists.php)
+| arrayKeys       | Return the keys of an array. | [array_keys](https://secure.php.net/manual/en/function.array-keys.php)
+| arrayMerge      | Merge one or more arrays. | [array_merge](https://secure.php.net/manual/en/function.array-merge.php)
+| arrayMergeRecursive | Merge two or more arrays recursively. | [array_merge_recursive](https://secure.php.net/manual/en/function.array-merge-recursive.php)
+| arrayReplace    | Replaces elements from passed arrays into the first array. | [array_replace](https://secure.php.net/manual/en/function.array-replace.php)
+| arrayReplaceRecursive | Replaces elements from passed arrays into the first array recursively. | [array_replace_recursive](https://secure.php.net/manual/en/function.array-replace-recursive.php)
+| arrayReverse    | Return an array with elements in reverse order. | [array_reverse](https://secure.php.net/manual/en/function.array-reverse.php)
+| arrayValues     | Return all the values of an array. | [array_values](https://secure.php.net/manual/en/function.array-values.php)
+| base64Encode    | Encodes data with MIME base64. | [base64_encode](https://secure.php.net/manual/en/function.base64-encode.php)
+| ceil            | Round fractions up. | [ceil](https://secure.php.net/manual/en/function.ceil.php)
+| componentExists | Checks if the given component name exists. |
+| count           | Count the number of items in an array. | [count](https://secure.php.net/manual/en/function.count.php)
+| empty           | Check to see if a string or array is empty. | [empty](https://secure.php.net/manual/en/function.empty.php)
+| floor           | Round fractions down. | [floor](https://secure.php.net/manual/en/function.floor.php)
+| formatDate      | Format a date. | [date_format](https://secure.php.net/manual/en/function.date-format.php)
+| formatNumber    | Format a number with grouped thousands. | [number_format](https://secure.php.net/manual/en/function.number-format.php)
+| htmlEncode      | Convert special characters to HTML entities. | [htmlspecialchars](https://secure.php.net/manual/en/function.htmlspecialchars.php)
+| join            | Join the elements of an array into a string. | [implode](https://secure.php.net/manual/en/function.implode.php)
+| lcase           | Lowercase a string. | [strtolower](https://secure.php.net/manual/en/function.strtolower.php), [mb_strtolower](https://secure.php.net/manual/en/function.mb-strtolower.php)
+| lcfirst         | Lowercase the first letter of a word. | [lcfirst](https://secure.php.net/manual/en/function.lcfirst.php)
+| ltrim           | Left trim a string. | [ltrim](https://secure.php.net/manual/en/function.ltrim.php)
+| max             | Find highest value. | [max](https://secure.php.net/manual/en/function.max.php)
+| min             | Find the lowest value. | [min](https://secure.php.net/manual/en/function.min.php)
+| queryEncode     | Generate a URL-encoded query string. | [http_build_query](https://secure.php.net/manual/en/function.http-build-query.php)
+| round           | Round a number. | [round](https://secure.php.net/manual/en/function.round.php)
+| rtrim           | Right trim a string. | [rtrim](https://secure.php.net/manual/en/function.rtrim.php)
+| sprintf         | Return a formatted string. | [sprintf](https://secure.php.net/manual/en/function.sprintf.php)
+| strlen          | Return the length of a string. | [strlen](https://secure.php.net/manual/en/function.strlen.php), [mb_strlen](https://secure.php.net/manual/en/function.mb-strlen.php)
+| substr          | Return a part of a string. | [substr](https://secure.php.net/manual/en/function.substr.php), [mb_substr](https://secure.php.net/manual/en/function.mb-substr.php)
+| trim            | Trim a string. | [trim](https://secure.php.net/manual/en/function.trim.php)
+| ucase           | Uppercase a string. | [strtoupper](https://secure.php.net/manual/en/function.strtoupper.php), [mb_strtoupper](https://secure.php.net/manual/en/function.mb-strtoupper.php)
+| ucfirst         | Uppercase the first letter of a word. | [ucfirst](https://secure.php.net/manual/en/function.ucfirst.php)
+| ucwords         | Uppercase the first letter in each word of a string. | [ucwords](https://secure.php.net/manual/en/function.ucwords.php)
+| urlEncode       | URL-encode according to RFC 3986. | [rawurlencode](https://secure.php.net/manual/en/function.rawurlencode.php)
 
 ### Literals
 
