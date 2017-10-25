@@ -29,6 +29,8 @@ This will include the "firstName" and "lastName" database keys. You can access d
 <p>Hello {user.firstName} {user.lastName}.</p>
 ```
 
+*You might be tempted to put a dash in your field names. However this will not work as expected because the field names are interpreted as expressions. So for example {is-on} will be interpreted as "is" minus "on"!*
+
 ### Meta
 
 You can add global meta data to all templates which are then accessed by putting an `@` sign before a variable name.
