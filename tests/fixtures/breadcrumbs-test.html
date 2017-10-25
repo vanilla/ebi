@@ -1,0 +1,9 @@
+<x-expr x-as="breadcrumbsDefault">
+    [
+    {url: "#", name: "Breadcrumbs"},
+    {url: "#", name: "Breadcrumbs"},
+    {url: "#", name: "Breadcrumbs"}
+    ]
+</x-expr>
+
+<count x-with="breadcrumbs ?: breadcrumbsDefault" />

@@ -29,7 +29,7 @@ abstract class AbstractTest extends TestCase {
         return $r;
     }
 
-    public function renderFixture($component, $data) {
+    public function renderFixture($component, $data = []) {
         $ebi = new Ebi(new FilesystemLoader(__DIR__.'/fixtures'), __DIR__.'/cache/fixtures');
 
         $rendered = $ebi->render($component, $data);

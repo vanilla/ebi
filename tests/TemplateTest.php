@@ -35,6 +35,14 @@ class TemplateTest extends AbstractTest {
     }
 
     /**
+     * Test a specific breadcrumbs example.
+     */
+    public function testWithAsBreadcrumbsExample() {
+        $r = $this->renderFixture('breadcrumbs-test', []);
+        $this->assertEquals('3', $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
