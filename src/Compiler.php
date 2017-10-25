@@ -230,6 +230,14 @@ class Compiler {
     public function __construct() {
         $this->expressions = new ExpressionLanguage();
         $this->expressions->setNamePattern('/[@a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/A');
+        $this->expressions->register(
+            'hasChildren',
+            function ($name = null) {
+                return empty($name) ? 'isset($children[0])' : "isset(\$children[$name ?: 0])";
+            },
+            function ($name = null) {
+                return false;
+            });
     }
 
     /**

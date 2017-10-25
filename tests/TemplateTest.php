@@ -43,6 +43,14 @@ class TemplateTest extends AbstractTest {
     }
 
     /**
+     * Test the hasChildren function.
+     */
+    public function testHasChildren() {
+        $r = $this->renderFixture('has-children');
+        $this->assertEquals('<div>child!</div>', trim($r));
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
