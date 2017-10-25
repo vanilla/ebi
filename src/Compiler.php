@@ -371,6 +371,9 @@ class Compiler {
             case XML_DOCUMENT_TYPE_NODE:
                 $out->echoLiteral("<!DOCTYPE {$node->name}>\n");
                 break;
+            case XML_CDATA_SECTION_NODE:
+                $this->compileTextNode($node, $out);
+                break;
             default:
                 $r = "// Unknown node\n".
                     '// '.str_replace("\n", "\n// ", $node->ownerDocument->saveHTML($node));
