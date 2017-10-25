@@ -85,6 +85,7 @@ Functions are called using the `functionName()` syntax. Ebi provides a set of de
 | floor           | Round fractions down. | [floor](https://secure.php.net/manual/en/function.floor.php)
 | formatDate      | Format a date. | [date_format](https://secure.php.net/manual/en/function.date-format.php)
 | formatNumber    | Format a number with grouped thousands. | [number_format](https://secure.php.net/manual/en/function.number-format.php)
+| hasChildren     | Checks if the component has children passed to it. Pass the name of a block to test for that specific child.
 | htmlEncode      | Convert special characters to HTML entities. | [htmlspecialchars](https://secure.php.net/manual/en/function.htmlspecialchars.php)
 | join            | Join the elements of an array into a string. | [implode](https://secure.php.net/manual/en/function.implode.php)
 | lcase           | Lowercase a string. | [strtolower](https://secure.php.net/manual/en/function.strtolower.php), [mb_strtolower](https://secure.php.net/manual/en/function.mb-strtolower.php)
