@@ -1,0 +1,1 @@
+<nav x-if="this"><ol x-each="this" x-as="i crumb" class="breadcrumbs-list" itemscope itemtype="http://schema.org/BreadcrumbList"><li class='breadcrumb-item' itemscope itemtype='http://schema.org/ListItem'><x x-tag="i < count(this) - 1 ? 'a' : 'span'" href="{i < count(this) - 1 ? crumb.url : false}">{crumb.name}</x></li></ol></nav>

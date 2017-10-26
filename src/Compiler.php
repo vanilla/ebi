@@ -224,6 +224,13 @@ class Compiler {
         'use' => 's',
     ];
 
+    protected static $boolAttributes = [
+        'checked' => 1,
+        'itemscope' => 1,
+        'required' => 1,
+        'selected' => 1,
+    ];
+
     /**
      * @var ExpressionLanguage
      */
@@ -471,13 +478,7 @@ class Compiler {
         } elseif (!empty($special) || $this->isComponent($node->tagName)) {
             $this->compileSpecialNode($node, $attributes, $special, $out);
         } else {
-            $this->compileOpenTag($node, $attributes, $special, $out);
-
-            foreach ($node->childNodes as $childNode) {
-                $this->compileNode($childNode, $out);
-            }
-
-            $this->compileCloseTag($node, $special, $out);
+            $this->compileBasicElement($node, $attributes, $special, $out);
         }
     }
 
@@ -589,6 +590,11 @@ class Compiler {
                 } else {
                     $this->compileElement($node, $attributes, $special, $out);
                 }
+                break;
+            case self::T_TAG:
+            default:
+                // This is only a tag node so it just gets compiled as an element.
+                $this->compileBasicElement($node, $attributes, $special, $out);
                 break;
         }
     }
@@ -777,6 +783,8 @@ class Compiler {
                 $value  = call_user_func($fn, var_export($attribute->value, true));
 
                 $out->echoCode('$this->attribute('.var_export($name, true).', '.$value.')');
+            } elseif ((empty($attribute->value) || $attribute->value === $name) && isset(self::$boolAttributes[$name])) {
+                $out->echoLiteral(' '.$name);
             } else {
                 $out->echoLiteral(' '.$name.'="');
                 $out->echoLiteral(htmlspecialchars($attribute->value));
@@ -1112,5 +1120,21 @@ class Compiler {
         } else {
             $out->echoCode('htmlspecialchars('.$expr.')');
         }
+    }
+
+    /**
+     * @param DOMElement $node
+     * @param $attributes
+     * @param $special
+     * @param CompilerBuffer $out
+     */
+    protected function compileBasicElement(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
+        $this->compileOpenTag($node, $attributes, $special, $out);
+
+        foreach ($node->childNodes as $childNode) {
+            $this->compileNode($childNode, $out);
+        }
+
+        $this->compileCloseTag($node, $special, $out);
     }
 }

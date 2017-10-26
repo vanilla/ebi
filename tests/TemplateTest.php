@@ -59,6 +59,20 @@ class TemplateTest extends AbstractTest {
     }
 
     /**
+     * This was a test that ended up boiling down to a bug where only the x-tag attribute was specified.
+     */
+    public function testBread2() {
+        $r = $this->renderFixture('bread2', [['name' => 'a', 'url' => '#1'], ['name' => 'b', 'url' => '#2']]);
+
+        $expected = <<<EOT
+<nav><ol class="breadcrumbs-list" itemscope itemtype="http://schema.org/BreadcrumbList"><li class="breadcrumb-item" itemscope itemtype="http://schema.org/ListItem"><a href="#1">a</a></li><li class="breadcrumb-item" itemscope itemtype="http://schema.org/ListItem"><span>b</span></li></ol></nav>
+EOT;
+
+        $this->assertEquals($expected, $r);
+
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

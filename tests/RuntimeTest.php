@@ -125,7 +125,7 @@ class RuntimeTest extends AbstractTest {
     public function testComponentNotFound() {
         $ebi = new TestEbi($this);
 
-        $this->expectOutputString('<!-- Component "foo" not found. -->');
+        $this->expectOutputString('<!-- Ebi component "foo" not found. -->');
         $ebi->write('foo');
     }
 
@@ -161,7 +161,7 @@ EOT;
 
         $this->expectOutputString('
 <!--
-Exception in component "foo"
+Ebi exception in component "foo".
 This is my exception!
 -->
 ');
