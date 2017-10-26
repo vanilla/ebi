@@ -51,6 +51,14 @@ class TemplateTest extends AbstractTest {
     }
 
     /**
+     * Script tags should be parsed like any other tag.
+     */
+    public function testScriptCompile() {
+        $r = $this->renderFixture('debug', ['hi']);
+        $this->assertEquals('<script>console.log(["hi"]);</script>', trim($r));
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

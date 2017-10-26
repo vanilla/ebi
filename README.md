@@ -29,6 +29,8 @@ This will include the "firstName" and "lastName" database keys. You can access d
 <p>Hello {user.firstName} {user.lastName}.</p>
 ```
 
+*You might be tempted to put a dash in your field names. However this will not work as expected because the field names are interpreted as expressions. So for example {is-on} will be interpreted as "is" minus "on"!*
+
 ### Meta
 
 You can add global meta data to all templates which are then accessed by putting an `@` sign before a variable name.
@@ -286,6 +288,20 @@ Don't parse templates within a literal.
 echo '<code>Hello <b x-literal>{username}</b></code>';
 ```
 
+### x-tag
+
+Sometimes you want to dynamically determine the name of a tag. That's where the the `x-tag` attribute comes in.
+
+```html
+<x x-tag="'h'~level">{heading}</x>
+```
+
+```php
+echo '<h'.$props['level'].'>',
+    $this->escape($props['heading']),
+    '</h'.$props['level'].'>';
+```
+
 ## Template Tags
 
 Most of Ebi's functionality uses special attributes. However, there are a couple of special tags supported.
@@ -435,6 +451,8 @@ The blocks get inserted into the component when it is used.
   </body>
 </html>
 ```
+
+*Tip: You can use the **hasChildren()** function to determine if a particular block has been passed to your component.*
 
 ### x-include
 
