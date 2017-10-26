@@ -306,41 +306,41 @@ echo '<h'.$props['level'].'>',
 
 Most of Ebi's functionality uses special attributes. However, there are a couple of special tags supported.
 
-### The `<x-expr>` Tag
+### The `<script type="ebi">` Tag
 
-Usually, you write expressions by enclosing them in braces (`{..}`). However, braces don't themselves allow brace characters. They also don't allow multi-line expressions. When you have such an expression you can instead enclose it in an `x-expr` tag.
+Usually, you write expressions by enclosing them in braces (`{..}`). However, braces don't themselves allow brace characters. They also don't allow multi-line expressions. When you have such an expression you can instead enclose it in a `<script tpye="ebi">` tag.
 
 ```html
-<x-expr>
+<script type="ebi">
   join(
     "|",
     [1, 2, 3]
   )
-</x-expr>
+</script>
 ```
 
 ```php
 echo $this->escape(join('|', [1, 2, 3]);
 ```
 
-#### `<x-expr x-unescape>`
+#### `<script x-unescape>`
 
-If you don't want to escape the output in an `<x-expr>` tag then add the `x-unescape` attribute.
+If you don't want to escape the output in an `<script>` tag then add the `x-unescape` attribute. You don't have to include the `type="ebi"` in this case.
 
 ```html
-<x-expr x-unescape>join('>', [1, 2, 3])</x-expr>
+<script x-unescape>join('>', [1, 2, 3])</script>
 ```
 
 ```php
 echo join('>', [1, 2, 3]);
 ```
 
-#### `<x-expr x-as="...">`
+#### `<script x-as="...">`
 
-You can also use the `<x-expr>` tag with an `x-as` attribute to create an expression variable that can be used later in the template.
+You can also use the `<script>` tag with an `x-as` attribute to create an expression variable that can be used later in the template. You don't have to include the `type="ebi"` in this case.
 
 ```html
-<x-expr x-as="title">trim(ucfirst(sentence))</x-expr>
+<script x-as="title">trim(ucfirst(sentence))</script>
 <h1 x-if="!empty(title)">{title}</h1>
 ```
 

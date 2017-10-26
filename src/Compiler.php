@@ -24,7 +24,7 @@ class Compiler {
     const T_EMPTY = 'x-empty';
     const T_X = 'x';
     const T_INCLUDE = 'x-include';
-    const T_EXPR = 'x-expr';
+    const T_EBI = 'ebi';
     const T_UNESCAPE = 'x-unescape';
     const T_TAG = 'x-tag';
 
@@ -466,12 +466,12 @@ class Compiler {
     protected function compileElementNode(DOMElement $node, CompilerBuffer $out) {
         list($attributes, $special) = $this->splitAttributes($node);
 
-        if ($node->tagName === self::T_EXPR) {
+        if ($node->tagName === 'script' && ((isset($attributes['type']) && $attributes['type']->value === self::T_EBI) || !empty($special[self::T_AS]) || !empty($special[self::T_UNESCAPE]))) {
             $this->compileExpressionNode($node, $attributes, $special, $out);
         } elseif (!empty($special) || $this->isComponent($node->tagName)) {
             $this->compileSpecialNode($node, $attributes, $special, $out);
         } else {
-            $this->compileOpenTag($node, $node->attributes, $special, $out);
+            $this->compileOpenTag($node, $attributes, $special, $out);
 
             foreach ($node->childNodes as $childNode) {
                 $this->compileNode($childNode, $out);
@@ -1094,8 +1094,8 @@ class Compiler {
      * Compile an x-expr node.
      *
      * @param DOMElement $node The node to compile.
-     * @param array $attributes The node's attributes.
-     * @param array $special An array of special attributes.
+     * @param DOMAttr[] $attributes The node's attributes.
+     * @param DOMAttr[] $special An array of special attributes.
      * @param CompilerBuffer $out The compiler output.
      */
     private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
