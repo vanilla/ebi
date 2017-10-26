@@ -113,12 +113,12 @@ class ParserTest extends TestCase {
         $ebi = new TestEbi($this);
 
         $src = <<<EOT
-<x-expr>
+<script type="ebi">
     join(
         '|',
         [1, 2, 3]
     )
-</x-expr>
+</script>
 EOT;
 
         $ebi->compile('expr-elem', $src, 'expr-elem');
@@ -131,12 +131,12 @@ EOT;
         $ebi = new TestEbi($this);
 
         $src = <<<EOT
-<x-expr x-as="foo">
+<script x-as="foo">
     {
         a: 1,
         b: 2
     }
-</x-expr>{unescape(json_encode(foo))}{bar}
+</script>{unescape(json_encode(foo))}{bar}
 EOT;
 
         $ebi->defineFunction('json_encode');

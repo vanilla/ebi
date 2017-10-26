@@ -87,12 +87,12 @@ tests:
       - name: x-literal
         template: '<x x-literal>Hello <b x-literal>{username}</b> a > b</x>'
         expected: 'Hello <b x-literal>{username}</b> a &gt; b'
-  - name: x-expr
-    template: '<x-expr>join(">", [1, 2, 3])</expr>'
+  - name: script
+    template: '<script type="ebi">join(">", [1, 2, 3])</script>'
     expected: '1&gt;2&gt;3'
     tests:
       - name: x-unescaped
-        template: '<x-expr x-unescape>join(">", [1, 2, 3])</expr>'
+        template: '<script x-unescape>join(">", [1, 2, 3])</script>'
         expected: '1>2>3'
       - name: x-as
-        template: '<x-expr x-as="foo">[1, 2, 3]</x-expr>{join(">", foo)}'
+        template: '<script x-as="foo">[1, 2, 3]</script>{join(">", foo)}'
