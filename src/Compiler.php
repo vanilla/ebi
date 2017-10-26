@@ -1112,9 +1112,10 @@ class Compiler {
 
         if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
             // The template specified an x-as attribute to alias the with expression.
-            $scope = [$m[1] => $out->depthName('props', 1)];
+            $out->depth(+1);
+            $scope = [$m[1] => $out->depthName('props')];
             $out->pushScope($scope);
-            $out->appendCode('$'.$out->depthName('props', 1)." = $expr;\n");
+            $out->appendCode('$'.$out->depthName('props')." = $expr;\n");
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
         } else {

@@ -73,6 +73,16 @@ EOT;
     }
 
     /**
+     * Multiple script assignments should work.
+     *
+     * There was a bug where the context was getting polluted.
+     */
+    public function testMultipleScriptAs() {
+        $r = $this->renderFixture('multiple-script-as');
+        $this->assertEquals('1,2', trim($r));
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
