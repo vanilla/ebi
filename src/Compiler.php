@@ -26,6 +26,7 @@ class Compiler {
     const T_INCLUDE = 'x-include';
     const T_EXPR = 'x-expr';
     const T_UNESCAPE = 'x-unescape';
+    const T_TAG = 'x-tag';
 
     const IDENT_REGEX = '`^([a-z0-9-]+)$`i';
 
@@ -41,7 +42,8 @@ class Compiler {
         self::T_BLOCK => 9,
         self::T_LITERAL => 10,
         self::T_AS => 11,
-        self::T_UNESCAPE => 12
+        self::T_UNESCAPE => 12,
+        self::T_TAG => 13
     ];
 
     protected static $htmlTags = [
@@ -344,6 +346,9 @@ class Compiler {
         }
 
         $r = $out->flush();
+
+        $errs = libxml_get_errors();
+
         return $r;
     }
 
@@ -466,13 +471,13 @@ class Compiler {
         } elseif (!empty($special) || $this->isComponent($node->tagName)) {
             $this->compileSpecialNode($node, $attributes, $special, $out);
         } else {
-            $this->compileOpenTag($node, $node->attributes, $out);
+            $this->compileOpenTag($node, $node->attributes, $special, $out);
 
             foreach ($node->childNodes as $childNode) {
                 $this->compileNode($childNode, $out);
             }
 
-            $this->compileCloseTag($node, $out);
+            $this->compileCloseTag($node, $special, $out);
         }
     }
 
@@ -582,7 +587,7 @@ class Compiler {
                 if ($this->isComponent($node->tagName)) {
                     $this->compileComponentInclude($node, $attributes, $special, $out);
                 } else {
-                    $this->compileElement($node, $attributes, $out);
+                    $this->compileElement($node, $attributes, $special, $out);
                 }
                 break;
         }
@@ -738,12 +743,27 @@ class Compiler {
         }
     }
 
-    protected function compileOpenTag(DOMElement $node, $attributes, CompilerBuffer $out, $force = false) {
-        if ($node->tagName === self::T_X) {
+    /**
+     * @param DOMElement $node
+     * @param DOMAttr[] $attributes
+     * @param DOMAttr[] $special
+     * @param CompilerBuffer $out
+     * @param bool $force
+     */
+    protected function compileOpenTag(DOMElement $node, $attributes, $special, CompilerBuffer $out, $force = false) {
+        $tagNameExpr = !empty($special[self::T_TAG]) ? $special[self::T_TAG]->value : '';
+
+        if ($node->tagName === self::T_X && empty($tagNameExpr)) {
             return;
         }
 
-        $out->echoLiteral('<'.$node->tagName);
+        if (!empty($tagNameExpr)) {
+            $tagNameExpr = $this->expr($tagNameExpr, $out, $special[self::T_TAG]);
+            $out->echoLiteral('<');
+            $out->echoCode($tagNameExpr);
+        } else {
+            $out->echoLiteral('<'.$node->tagName);
+        }
 
         foreach ($attributes as $name => $attribute) {
             /* @var DOMAttr $attribute */
@@ -775,8 +795,18 @@ class Compiler {
         return preg_match('`^{\S.*}$`', $value);
     }
 
-    protected function compileCloseTag(DOMElement $node, CompilerBuffer $out, $force = false) {
-        if (($force || $node->hasChildNodes()) && $node->tagName !== self::T_X) {
+    protected function compileCloseTag(DOMElement $node, $special, CompilerBuffer $out, $force = false) {
+        if (!$force && !$node->hasChildNodes()) {
+            return;
+        }
+
+        $tagNameExpr = !empty($special[self::T_TAG]) ? $special[self::T_TAG]->value : '';
+        if (!empty($tagNameExpr)) {
+            $tagNameExpr = $this->expr($tagNameExpr, $out, $special[self::T_TAG]);
+            $out->echoLiteral('</');
+            $out->echoCode($tagNameExpr);
+            $out->echoLiteral('>');
+        } elseif ($node->tagName !== self::T_X) {
             $out->echoLiteral("</{$node->tagName}>");
         }
     }
@@ -833,7 +863,7 @@ class Compiler {
 
     protected function compileEach(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $this->compileTagComment($node, $attributes, $special, $out);
-        $this->compileOpenTag($node, $attributes, $out);
+        $this->compileOpenTag($node, $attributes, $special, $out);
 
         $emptyNode = $this->findSpecialNode($node, self::T_EMPTY, self::T_ELSE);
         $out->setNodeProp($emptyNode, 'skip', true);
@@ -861,7 +891,7 @@ class Compiler {
             $out->appendCode("}\n");
         }
 
-        $this->compileCloseTag($node, $out);
+        $this->compileCloseTag($node, $special, $out);
     }
 
     protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
@@ -889,24 +919,24 @@ class Compiler {
         $this->compileTagComment($node, $attributes, $special, $out);
         unset($special[self::T_LITERAL]);
 
-        $this->compileOpenTag($node, $attributes, $out);
+        $this->compileOpenTag($node, $attributes, $special, $out);
 
         foreach ($node->childNodes as $childNode) {
             $html = $childNode->ownerDocument->saveHTML($childNode);
             $out->echoLiteral($html);
         }
 
-        $this->compileCloseTag($node, $out);
+        $this->compileCloseTag($node, $special, $out);
     }
 
-    protected function compileElement(DOMElement $node, array $attributes, CompilerBuffer $out) {
-        $this->compileOpenTag($node, $attributes, $out);
+    protected function compileElement(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $this->compileOpenTag($node, $attributes, $special, $out);
 
         foreach ($node->childNodes as $childNode) {
             $this->compileNode($childNode, $out);
         }
 
-        $this->compileCloseTag($node, $out);
+        $this->compileCloseTag($node, $special, $out);
     }
 
     /**
@@ -1049,7 +1079,7 @@ class Compiler {
         $key = $child->value === '' ? 0 : $child->value;
         $keyStr = var_export($key, true);
 
-        $this->compileOpenTag($node, $attributes, $out, true);
+        $this->compileOpenTag($node, $attributes, $special, $out, true);
 
         $out->appendCode("if (isset(\$children[{$keyStr}])) {\n");
         $out->indent(+1);
@@ -1057,7 +1087,7 @@ class Compiler {
         $out->indent(-1);
         $out->appendCode("}\n");
 
-        $this->compileCloseTag($node, $out, true);
+        $this->compileCloseTag($node, $special, $out, true);
     }
 
     /**
@@ -1069,6 +1099,11 @@ class Compiler {
      * @param CompilerBuffer $out The compiler output.
      */
     private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        $s = '';
+        foreach ($node->childNodes as $childNode) {
+            $s .= 'foo';
+        }
+
         $str = $raw = $node->nodeValue;
         $expr = $this->expr($str, $out);
 
