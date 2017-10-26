@@ -1099,11 +1099,6 @@ class Compiler {
      * @param CompilerBuffer $out The compiler output.
      */
     private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
-        $s = '';
-        foreach ($node->childNodes as $childNode) {
-            $s .= 'foo';
-        }
-
         $str = $raw = $node->nodeValue;
         $expr = $this->expr($str, $out);
 
