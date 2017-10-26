@@ -22,3 +22,32 @@ tests:
     template: '{unescape(a)}'
     data: {a: '<b>foo</b>'}
     expected: <b>foo</b>
+  - name: attribute expr
+    template: <p c="{this}">a</p>
+    data: 'foo'
+    expected: '<p c="foo">a</p>'
+    tests:
+      - name: 'true'
+        data: true
+        expected: '<p c>a</p>'
+      - name: 'false'
+        data: false
+        expected: '<p>a</p>'
+      - name: 'null'
+        data: null
+        expected: '<p>a</p>'
+  - name: aria attribute expr
+    template: <p aria-c="{this}">a</p>
+    data: 'foo'
+    expected: '<p aria-c="foo">a</p>'
+    tests:
+      - name: 'true'
+        data: true
+        expected: '<p aria-c="true">a</p>'
+      - name: 'false'
+        data: false
+        expected: '<p aria-c="false">a</p>'
+      - name: 'null'
+        data: null
+        expected: '<p>a</p>'
+

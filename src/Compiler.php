@@ -765,23 +765,23 @@ class Compiler {
             $out->echoLiteral('<'.$node->tagName);
         }
 
+        /* @var DOMAttr $attribute */
         foreach ($attributes as $name => $attribute) {
-            /* @var DOMAttr $attribute */
-            $out->echoLiteral(' '.$name.'="');
-
             // Check for an attribute expression.
             if ($this->isExpression($attribute->value)) {
-                $out->echoCode('htmlspecialchars('.$this->expr(substr($attribute->value, 1, -1), $out, $attribute).')');
+                $out->echoCode(
+                    '$this->attribute('.var_export($name, true).', '.
+                    $this->expr(substr($attribute->value, 1, -1), $out, $attribute).
+                    ')');
             } elseif (null !== $fn = $this->getAttributeFunction($attribute)) {
                 $value  = call_user_func($fn, var_export($attribute->value, true));
 
-                $out->echoCode("htmlspecialchars($value)");
-
+                $out->echoCode('$this->attribute('.var_export($name, true).', '.$value.')');
             } else {
+                $out->echoLiteral(' '.$name.'="');
                 $out->echoLiteral(htmlspecialchars($attribute->value));
+                $out->echoLiteral('"');
             }
-
-            $out->echoLiteral('"');
         }
 
         if ($node->hasChildNodes() || $force) {

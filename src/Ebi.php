@@ -493,4 +493,31 @@ class Ebi {
         $this->meta = $meta;
         return $this;
     }
+
+    /**
+     * Return a dynamic attribute.
+     *
+     * The attribute renders differently depending on the value.
+     *
+     * - If the value is **true** then it will render as an HTML5 boolean attribute.
+     * - If the value is **false** or **null** then the attribute will not render.
+     * - Other values render as attribute values.
+     * - Attributes that start with **aria-** render **true** and **false** as values.
+     *
+     * @param string $name The name of the attribute.
+     * @param mixed $value The value of the attribute.
+     * @return string Returns the attribute definition or an empty string.
+     */
+    protected function attribute($name, $value) {
+        if (substr($name, 0, 5) === 'aria-' && is_bool($value)) {
+            $value = $value ? 'true' : 'false';
+        }
+
+        if ($value === true) {
+            return ' '.$name;
+        } elseif (!in_array($value, [null, false], true)) {
+            return " $name=\"".htmlspecialchars($value).'"';
+        }
+        return '';
+    }
 }

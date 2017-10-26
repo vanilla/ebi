@@ -66,7 +66,7 @@ abstract class AbstractTest extends TestCase {
         if (isset($data['template'])) {
             $context['template'] = $data['template'];
         }
-        if (isset($data['data'])) {
+        if (array_key_exists('data', $data)) {
             $context['data'] = $data['data'];
         }
         if (isset($data['expected'])) {

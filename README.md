@@ -481,11 +481,40 @@ $this->write($props['salutation'], $props);
 
 ## HTML Utilities
 
+### Attribute expressions
+
+When you specify an attribute value as an expression then the attribute will render differently depending on the value.
+
+| Value | Behavior |
+| ----- | -------- |
+| true | Renders just the attribute. |
+| false, null | Won't render the attribute. |
+| aria-* attribute | Values of true or false render as string values. |
+| other values | render as normal attribute definitions. |
+
+### Examples
+
+The following templates:
+
+```html
+<input type="checkbox" checked="{true}" />
+<input type="checkbox" checked="{false}" />
+<span role="checkbox" aria-checked="{true}" />
+```
+
+Will result in the following output:
+
+```html
+<input type="checkbox" checked />
+<input type="checkbox" />
+<span role="checkbox" aria-checked="true" />
+```
+
 ### CSS class attributes
 
 When you assign a css class with data you can pass it an array or an object.
 
-### Array class attributes
+#### Array class attributes
 
 ```html
 <p class="{['comment', 'is-default']}">Hello</p>
@@ -497,7 +526,7 @@ All elements of the array are rendered as separate classes.
 <p class="comment is-default">Hello</p>
 ```
 
-### Object class attributes
+#### Object class attributes
 
 ```html
 <p class="{{comment: true, 'is-default': isDefault }}">Hello</p>
