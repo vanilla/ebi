@@ -87,12 +87,12 @@ class Ebi {
 
         // Define a simple component not found component to help troubleshoot.
         $this->defineComponent('@component-not-found', function ($props) {
-            echo '<!-- Component "'.htmlspecialchars($props['component']).'" not found. -->';
+            echo '<!-- Ebi component "'.htmlspecialchars($props['component']).'" not found. -->';
         });
 
         // Define a simple component exception.
         $this->defineComponent('@exception', function ($props) {
-            echo "\n<!--\nException in component \"".htmlspecialchars($props['component'])."\"\n".
+            echo "\n<!--\nEbi exception in component \"".htmlspecialchars($props['component'])."\".\n".
                 htmlspecialchars($props['message'])."\n-->\n";
 
         });
@@ -240,7 +240,7 @@ class Ebi {
         $cachePath = "{$this->cachePath}/$cacheKey.php";
         $component = strtolower($component);
 
-        $php = $this->compiler->compile($src, ['basename' => $component]);
+        $php = $this->compiler->compile($src, ['basename' => $component, 'path' => $cacheKey]);
         $comment = "/*\n".str_replace('*/', '❄/', trim($src))."\n*/";
 
         $this->filePutContents($cachePath, "<?php\n$comment\n$php");
