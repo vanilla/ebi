@@ -133,6 +133,52 @@ EOT;
     }
 
     /**
+     * An invalid identifier in `<script x-as>` should result in an error.
+     */
+    public function testScriptAsError() {
+        $r = $this->renderFixture('script-as-error');
+        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+    }
+
+    /**
+     * In invalid identifier in `x-with x-as` should result in an error.
+     */
+    public function testWithAsError() {
+        $r = $this->renderFixture('with-as-error');
+        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+    }
+
+    /**
+     * In invalid identifier in `x-each x-as` should result in an error.
+     */
+    public function testEachAsError() {
+        $r = $this->renderFixture('each-as-error');
+        $this->assertContains("Invalid identifier &quot;!blerg ifd&quot; in x-as attribute.", $r);
+    }
+
+    /**
+     * Test basic data escaping.
+     */
+    public function testEscaping() {
+        $r = $this->renderFixture('escaping', [
+            [1, 2, 3],
+            $this,
+            new \DateTime('2011-11-11', new \DateTimeZone('UTC')),
+            '<>'
+        ]);
+
+        $this->assertEquals('|[array]|{object}|2011-11-11T00:00:00+00:00|&lt;&gt;|', $r);
+    }
+
+    /**
+     * Test an x-block attribute error.
+     */
+    public function testBlockError() {
+        $r = $this->renderFixture('block-error');
+        $this->assertContains('Blocks must be direct descendants of component includes.', $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

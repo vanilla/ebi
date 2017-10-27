@@ -241,7 +241,7 @@ class CompilerBuffer {
             'path' => $this->getPath(),
             'source' => '',
             'sourcePosition' => null,
-            'line' => $line = $node->getLineNo(),
+            'line' => $node->getLineNo(),
             'lines' => []
         ];
         $message = $ex->getMessage();
@@ -252,13 +252,18 @@ class CompilerBuffer {
             if (!isset($context['sourcePosition'])) {
                 $result['sourcePosition'] = $position;
             }
+        } elseif (empty($result['source'])) {
+            if ($node instanceof \DOMAttr) {
+                $result['source'] = $node->name.'="'.$node->value.'"';
+            }
         }
 
         if (!empty($this->source)) {
             $allLines = explode("\n", $this->source);
 
             $lines = [];
-            for ($i = max(0, $line - 3); $i < $line + 2; $i++) {
+            $line = $result['line'];
+            for ($i = max(0, $line - 4); $i < $line + 3; $i++) {
                 if (isset($allLines[$i])) {
                     $lines[$i + 1] = $allLines[$i];
                 }

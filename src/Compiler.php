@@ -449,9 +449,9 @@ class Compiler {
     }
 
     protected function compileTextNode(DOMNode $node, CompilerBuffer $out) {
-        $text = $this->ltrim($this->rtrim($node->nodeValue, $node, $out), $node, $out);
+        $nodeText = $node->nodeValue;
 
-        $items = $this->splitExpressions($text);
+        $items = $this->splitExpressions($nodeText);
         foreach ($items as $i => list($text, $offset)) {
             if (preg_match('`^{\S`', $text)) {
                 if (preg_match('`^{\s*unescape\((.+)\)\s*}$`', $text, $m)) {
@@ -459,18 +459,21 @@ class Compiler {
                 } else {
                     try {
                         $expr = substr($text, 1, -1);
-                        $out->echoCode('htmlspecialchars('.$this->expr($expr, $out).')');
+                        $out->echoCode($this->compileEscape($this->expr($expr, $out)));
                     } catch (SyntaxError $ex) {
-                        throw $out->createCompilerException($node, $ex, ['source' => $expr]);
+                        $nodeLineCount = substr_count($nodeText, "\n");
+                        $offsetLineCount = substr_count($nodeText, "\n", 0, $offset);
+                        $line = $node->getLineNo() - $nodeLineCount + $offsetLineCount;
+                        throw $out->createCompilerException($node, $ex, ['source' => $expr, 'line' => $line]);
                     }
                 }
             } else {
-//                if ($i === 0) {
-//                    $text = $this->ltrim($text, $node, $out);
-//                }
-//                if ($i === count($items) - 1) {
-//                    $text = $this->rtrim($text, $node, $out);
-//                }
+                if ($i === 0) {
+                    $text = $this->ltrim($text, $node, $out);
+                }
+                if ($i === count($items) - 1) {
+                    $text = $this->rtrim($text, $node, $out);
+                }
 
                 $out->echoLiteral($text);
             }
@@ -652,12 +655,19 @@ class Compiler {
     }
 
     private function compileBlock(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        // Blocks must be direct descendants of component includes.
+        if (!$out->getNodeProp($node->parentNode, self::T_INCLUDE)) {
+            throw $out->createCompilerException($node, new \Exception("Blocks must be direct descendants of component includes."));
+        }
+
         $name = strtolower($special[self::T_BLOCK]->value);
         unset($special[self::T_BLOCK]);
 
         $prev = $out->select($name);
 
-        $use = '$'.implode(', $', array_unique($out->getScopeVariables())).', $children';
+        $vars = array_filter(array_unique($out->getScopeVariables()));
+        $vars[] = 'children';
+        $use = '$'.implode(', $', array_unique($out->getScopeVariables()));
 
         $out->appendCode("function () use ($use) {\n");
         $out->pushScope(['this' => 'props']);
@@ -684,6 +694,9 @@ class Compiler {
      * @param CompilerBuffer $out
      */
     protected function compileComponentInclude(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        // Mark the node as a component include.
+        $out->setNodeProp($node, self::T_INCLUDE, true);
+
         // Generate the attributes into a property array.
         $props = [];
         foreach ($attributes as $name => $attribute) {
@@ -732,6 +745,7 @@ class Compiler {
             'depth' => $out->getDepth(),
             'scopes' => $out->getAllScopes()
         ]);
+        $blocksOut->setNodeProp($parent, self::T_INCLUDE, true);
 
         if ($this->isEmptyNode($parent)) {
             return $blocksOut;
@@ -927,14 +941,22 @@ class Compiler {
 
     protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $this->compileTagComment($node, $attributes, $special, $out);
-        $with = $this->expr($special[self::T_WITH]->value, $out);
 
         $out->depth(+1);
         $scope = ['this' => $out->depthName('props')];
-        if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
-            // The template specified an x-as attribute to alias the with expression.
-            $scope = [$m[1] => $out->depthName('props')];
+        if (!empty($special[self::T_AS])) {
+            if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
+                // The template specified an x-as attribute to alias the with expression.
+                $scope = [$m[1] => $out->depthName('props')];
+            } else {
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
+            }
         }
+        $with = $this->expr($special[self::T_WITH]->value, $out);
+
         unset($special[self::T_WITH], $special[self::T_AS]);
 
         $out->pushScope($scope);
@@ -1023,11 +1045,16 @@ class Compiler {
         $as = ['', $out->depthName('props', 1)];
         $scope = ['this' => $as[1]];
         if (!empty($special[self::T_AS])) {
-            if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`i', $special[self::T_AS]->value, $m)) {
+            if (preg_match('`^(?:([a-z0-9]+)\s+)?([a-z0-9]+)$`i', $special[self::T_AS]->value, $m)) {
                 $scope = [$m[2] => $as[1]];
                 if (!empty($m[1])) {
                     $scope[$m[1]] = $as[0] = $out->depthName('i', 1);
                 }
+            } else {
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
             }
         }
         unset($special[self::T_AS]);
@@ -1140,18 +1167,21 @@ class Compiler {
 
         if (!empty($special[self::T_AS])) {
             if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
-            // The template specified an x-as attribute to alias the with expression.
-            $out->depth(+1);
-            $scope = [$m[1] => $out->depthName('expr')];
-            $out->pushScope($scope);
-            $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
+                // The template specified an x-as attribute to alias the with expression.
+                $out->depth(+1);
+                $scope = [$m[1] => $out->depthName('expr')];
+                $out->pushScope($scope);
+                $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
             } else {
-
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
             }
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
         } else {
-            $out->echoCode('htmlspecialchars('.$expr.')');
+            $out->echoCode($this->compileEscape($expr));
         }
     }
 
@@ -1171,6 +1201,8 @@ class Compiler {
         $this->compileCloseTag($node, $special, $out);
     }
 
-    private function compileCompilerException(CompileException $ex, CompilerBuffer $out) {
+    protected function compileEscape($php) {
+//        return 'htmlspecialchars('.$php.')';
+        return '$this->escape('.$php.')';
     }
 }

@@ -239,9 +239,18 @@ class Ebi {
             $source = $props['source'];
             if (isset($props['sourcePosition'])) {
                 $pos = $props['sourcePosition'];
+                $len = isset($props['sourceLength']) ? $props['sourceLength'] : 1;
+
+                if ($len === 1) {
+                    // Small kludge to select a viewable character.
+                    for (; $pos >= 0 && isset($source[$pos]) && in_array($source[$pos], [' ', "\n"], true); $pos--, $len++) {
+                        // It's all in the loop.
+                    }
+                }
+
                 $source = htmlspecialchars(substr($source, 0, $pos)).
-                    '<mark class="ebi-ex-highlight">'.htmlspecialchars(substr($source, $pos, 1)).'</mark>'.
-                    htmlspecialchars(substr($source, $pos + 1));
+                    '<mark class="ebi-ex-highlight">'.htmlspecialchars(substr($source, $pos, $len)).'</mark>'.
+                    htmlspecialchars(substr($source, $pos + $len));
             } else {
                 $source = htmlspecialchars($source);
             }
@@ -575,5 +584,23 @@ class Ebi {
             return " $name=\"".htmlspecialchars($value).'"';
         }
         return '';
+    }
+
+    /**
+     * Escape a value for echoing to HTML with a bit of non-scalar checking.
+     *
+     * @param mixed $val The value to escape.
+     * @return string The escaped value.
+     */
+    protected function escape($val = null) {
+        if (is_array($val)) {
+            return '[array]';
+        } elseif ($val instanceof \DateTimeInterface) {
+            return htmlspecialchars($val->format(\DateTime::RFC3339));
+        } elseif (is_object($val) && !method_exists($val, '__toString')) {
+            return '{object}';
+        } else {
+            return htmlspecialchars($val);
+        }
     }
 }
