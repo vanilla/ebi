@@ -156,6 +156,17 @@ EOT;
         $this->assertContains("Invalid identifier &quot;!blerg ifd&quot; in x-as attribute.", $r);
     }
 
+    public function testEscaping() {
+        $r = $this->renderFixture('escaping', [
+            [1, 2, 3],
+            $this,
+            new \DateTime('2011-11-11', new \DateTimeZone('UTC')),
+            '<>'
+        ]);
+
+        $this->assertEquals('|[array]|{object}|2011-11-11T00:00:00+00:00|&lt;&gt;|', $r);
+    }
+
     /**
      *
      */

@@ -459,7 +459,7 @@ class Compiler {
                 } else {
                     try {
                         $expr = substr($text, 1, -1);
-                        $out->echoCode('htmlspecialchars('.$this->expr($expr, $out).')');
+                        $out->echoCode($this->compileEscape($this->expr($expr, $out)));
                     } catch (SyntaxError $ex) {
                         $nodeLineCount = substr_count($nodeText, "\n");
                         $offsetLineCount = substr_count($nodeText, "\n", 0, $offset);
@@ -1170,7 +1170,7 @@ class Compiler {
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
         } else {
-            $out->echoCode('htmlspecialchars('.$expr.')');
+            $out->echoCode($this->compileEscape($expr));
         }
     }
 
@@ -1188,5 +1188,10 @@ class Compiler {
         }
 
         $this->compileCloseTag($node, $special, $out);
+    }
+
+    protected function compileEscape($php) {
+//        return 'htmlspecialchars('.$php.')';
+        return '$this->escape('.$php.')';
     }
 }

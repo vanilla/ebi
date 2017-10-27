@@ -585,4 +585,22 @@ class Ebi {
         }
         return '';
     }
+
+    /**
+     * Escape a value for echoing to HTML with a bit of non-scalar checking.
+     *
+     * @param mixed $val The value to escape.
+     * @return string The escaped value.
+     */
+    protected function escape($val = null) {
+        if (is_array($val)) {
+            return '[array]';
+        } elseif ($val instanceof \DateTimeInterface) {
+            return htmlspecialchars($val->format(\DateTime::RFC3339));
+        } elseif (is_object($val) && !method_exists($val, '__toString')) {
+            return '{object}';
+        } else {
+            return htmlspecialchars($val);
+        }
+    }
 }
