@@ -1127,7 +1127,12 @@ class Compiler {
      */
     private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $str = $raw = $node->nodeValue;
-        $expr = $this->expr($str, $out);
+
+        try {
+            $expr = $this->expr($str, $out);
+        } catch (SyntaxError $ex) {
+            throw $out->createCompilerException($node, $ex);
+        }
 
         if (!empty($special[self::T_AS])) {
             if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {

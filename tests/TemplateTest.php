@@ -91,6 +91,10 @@ EOT;
         $this->assertTrue(strpos($r, 'Error compiling expr-error near line 1.') !== false);
     }
 
+    public function testExprScriptError() {
+        $r = $this->renderFixture('script-expr-error');
+    }
+
     /**
      *
      */

@@ -245,7 +245,7 @@ class CompilerBuffer {
         if ($ex instanceof SyntaxError) {
             list($error, $position) = $this->splitSyntaxError($ex);
             $result['context'] = [
-                'source' => $node instanceof \DOMAttr ? $node->value : $node->textContent,
+                'source' => $node instanceof \DOMAttr ? $node->value : $node->nodeValue,
                 'position' => $position
             ];
         }
