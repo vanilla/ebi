@@ -134,6 +134,9 @@ class Ebi {
             } else {
                 $this->write('@component-not-found', ['component' => $component]);
             }
+        } catch (\Throwable $ex) {
+            $this->write('@exception', ['message' => $ex->getMessage(), 'code', $ex->getCode(), 'component' => $component]);
+            return;
         } catch (\Exception $ex) {
             $this->write('@exception', ['message' => $ex->getMessage(), 'code', $ex->getCode(), 'component' => $component]);
             return;
