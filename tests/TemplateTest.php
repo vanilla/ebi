@@ -133,6 +133,30 @@ EOT;
     }
 
     /**
+     * An invalid identifier in `<script x-as>` should result in an error.
+     */
+    public function testScriptAsError() {
+        $r = $this->renderFixture('script-as-error');
+        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+    }
+
+    /**
+     * In invalid identifier in `x-with x-as` should result in an error.
+     */
+    public function testWithAsError() {
+        $r = $this->renderFixture('with-as-error');
+        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+    }
+
+    /**
+     * In invalid identifier in `x-each x-as` should result in an error.
+     */
+    public function testEachAsError() {
+        $r = $this->renderFixture('each-as-error');
+        $this->assertContains("Invalid identifier &quot;!blerg ifd&quot; in x-as attribute.", $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

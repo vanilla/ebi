@@ -449,9 +449,9 @@ class Compiler {
     }
 
     protected function compileTextNode(DOMNode $node, CompilerBuffer $out) {
-        $text = $this->ltrim($this->rtrim($node->nodeValue, $node, $out), $node, $out);
+        $nodeText = $node->nodeValue;
 
-        $items = $this->splitExpressions($text);
+        $items = $this->splitExpressions($nodeText);
         foreach ($items as $i => list($text, $offset)) {
             if (preg_match('`^{\S`', $text)) {
                 if (preg_match('`^{\s*unescape\((.+)\)\s*}$`', $text, $m)) {
@@ -461,16 +461,19 @@ class Compiler {
                         $expr = substr($text, 1, -1);
                         $out->echoCode('htmlspecialchars('.$this->expr($expr, $out).')');
                     } catch (SyntaxError $ex) {
-                        throw $out->createCompilerException($node, $ex, ['source' => $expr]);
+                        $nodeLineCount = substr_count($nodeText, "\n");
+                        $offsetLineCount = substr_count($nodeText, "\n", 0, $offset);
+                        $line = $node->getLineNo() - $nodeLineCount + $offsetLineCount;
+                        throw $out->createCompilerException($node, $ex, ['source' => $expr, 'line' => $line]);
                     }
                 }
             } else {
-//                if ($i === 0) {
-//                    $text = $this->ltrim($text, $node, $out);
-//                }
-//                if ($i === count($items) - 1) {
-//                    $text = $this->rtrim($text, $node, $out);
-//                }
+                if ($i === 0) {
+                    $text = $this->ltrim($text, $node, $out);
+                }
+                if ($i === count($items) - 1) {
+                    $text = $this->rtrim($text, $node, $out);
+                }
 
                 $out->echoLiteral($text);
             }
@@ -927,14 +930,22 @@ class Compiler {
 
     protected function compileWith(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $this->compileTagComment($node, $attributes, $special, $out);
-        $with = $this->expr($special[self::T_WITH]->value, $out);
 
         $out->depth(+1);
         $scope = ['this' => $out->depthName('props')];
-        if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
-            // The template specified an x-as attribute to alias the with expression.
-            $scope = [$m[1] => $out->depthName('props')];
+        if (!empty($special[self::T_AS])) {
+            if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
+                // The template specified an x-as attribute to alias the with expression.
+                $scope = [$m[1] => $out->depthName('props')];
+            } else {
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
+            }
         }
+        $with = $this->expr($special[self::T_WITH]->value, $out);
+
         unset($special[self::T_WITH], $special[self::T_AS]);
 
         $out->pushScope($scope);
@@ -1023,11 +1034,16 @@ class Compiler {
         $as = ['', $out->depthName('props', 1)];
         $scope = ['this' => $as[1]];
         if (!empty($special[self::T_AS])) {
-            if (preg_match('`(?:([a-z0-9]+)\s+)?([a-z0-9]+)`i', $special[self::T_AS]->value, $m)) {
+            if (preg_match('`^(?:([a-z0-9]+)\s+)?([a-z0-9]+)$`i', $special[self::T_AS]->value, $m)) {
                 $scope = [$m[2] => $as[1]];
                 if (!empty($m[1])) {
                     $scope[$m[1]] = $as[0] = $out->depthName('i', 1);
                 }
+            } else {
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
             }
         }
         unset($special[self::T_AS]);
@@ -1140,13 +1156,16 @@ class Compiler {
 
         if (!empty($special[self::T_AS])) {
             if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
-            // The template specified an x-as attribute to alias the with expression.
-            $out->depth(+1);
-            $scope = [$m[1] => $out->depthName('expr')];
-            $out->pushScope($scope);
-            $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
+                // The template specified an x-as attribute to alias the with expression.
+                $out->depth(+1);
+                $scope = [$m[1] => $out->depthName('expr')];
+                $out->pushScope($scope);
+                $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
             } else {
-
+                throw $out->createCompilerException(
+                    $special[self::T_AS],
+                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                );
             }
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
@@ -1169,8 +1188,5 @@ class Compiler {
         }
 
         $this->compileCloseTag($node, $special, $out);
-    }
-
-    private function compileCompilerException(CompileException $ex, CompilerBuffer $out) {
     }
 }

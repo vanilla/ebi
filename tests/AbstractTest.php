@@ -35,7 +35,7 @@ abstract class AbstractTest extends TestCase {
 
         $rendered = $ebi->render($component, $data);
 
-        $renderedPath = __DIR__."/cache/fixtures/rendered/$component";
+        $renderedPath = __DIR__."/cache/fixtures/rendered/$component.html";
         if (!file_exists(dirname($renderedPath))) {
             mkdir(dirname($renderedPath), 0777, true);
         }
