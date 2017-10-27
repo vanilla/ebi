@@ -655,12 +655,19 @@ class Compiler {
     }
 
     private function compileBlock(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        // Blocks must be direct descendants of component includes.
+        if (!$out->getNodeProp($node->parentNode, self::T_INCLUDE)) {
+            throw $out->createCompilerException($node, new \Exception("Blocks must be direct descendants of component includes."));
+        }
+
         $name = strtolower($special[self::T_BLOCK]->value);
         unset($special[self::T_BLOCK]);
 
         $prev = $out->select($name);
 
-        $use = '$'.implode(', $', array_unique($out->getScopeVariables())).', $children';
+        $vars = array_filter(array_unique($out->getScopeVariables()));
+        $vars[] = 'children';
+        $use = '$'.implode(', $', array_unique($out->getScopeVariables()));
 
         $out->appendCode("function () use ($use) {\n");
         $out->pushScope(['this' => 'props']);
@@ -687,6 +694,9 @@ class Compiler {
      * @param CompilerBuffer $out
      */
     protected function compileComponentInclude(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
+        // Mark the node as a component include.
+        $out->setNodeProp($node, self::T_INCLUDE, true);
+
         // Generate the attributes into a property array.
         $props = [];
         foreach ($attributes as $name => $attribute) {
@@ -735,6 +745,7 @@ class Compiler {
             'depth' => $out->getDepth(),
             'scopes' => $out->getAllScopes()
         ]);
+        $blocksOut->setNodeProp($parent, self::T_INCLUDE, true);
 
         if ($this->isEmptyNode($parent)) {
             return $blocksOut;

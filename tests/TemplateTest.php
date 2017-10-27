@@ -156,6 +156,9 @@ EOT;
         $this->assertContains("Invalid identifier &quot;!blerg ifd&quot; in x-as attribute.", $r);
     }
 
+    /**
+     * Test basic data escaping.
+     */
     public function testEscaping() {
         $r = $this->renderFixture('escaping', [
             [1, 2, 3],
@@ -165,6 +168,14 @@ EOT;
         ]);
 
         $this->assertEquals('|[array]|{object}|2011-11-11T00:00:00+00:00|&lt;&gt;|', $r);
+    }
+
+    /**
+     * Test an x-block attribute error.
+     */
+    public function testBlockError() {
+        $r = $this->renderFixture('block-error');
+        $this->assertContains('Blocks must be direct descendants of component includes.', $r);
     }
 
     /**
