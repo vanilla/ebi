@@ -634,7 +634,7 @@ class Compiler {
 
         $prev = $out->select($name);
 
-        $use = '$'.implode(', $', $out->getScopeVariables()).', $children';
+        $use = '$'.implode(', $', array_unique($out->getScopeVariables())).', $children';
 
         $out->appendCode("function () use ($use) {\n");
         $out->pushScope(['this' => 'props']);
@@ -1113,9 +1113,9 @@ class Compiler {
         if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
             // The template specified an x-as attribute to alias the with expression.
             $out->depth(+1);
-            $scope = [$m[1] => $out->depthName('props')];
+            $scope = [$m[1] => $out->depthName('expr')];
             $out->pushScope($scope);
-            $out->appendCode('$'.$out->depthName('props')." = $expr;\n");
+            $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
         } else {
