@@ -235,10 +235,10 @@ class Ebi {
 
         echo '<p class="ebi-ex-message">'.htmlspecialchars($props['message'])."</p>\n";
 
-        if (!empty($props['context'])) {
-            $source = $props['context']['source'];
-            if (isset($props['context']['position'])) {
-                $pos = $props['context']['position'];
+        if (!empty($props['source'])) {
+            $source = $props['source'];
+            if (isset($props['sourcePosition'])) {
+                $pos = $props['sourcePosition'];
                 $source = htmlspecialchars(substr($source, 0, $pos)).
                     '<mark class="ebi-ex-highlight">'.htmlspecialchars(substr($source, $pos, 1)).'</mark>'.
                     htmlspecialchars(substr($source, $pos + 1));

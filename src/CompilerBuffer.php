@@ -233,21 +233,25 @@ class CompilerBuffer {
      *
      * @param \DOMNode $node The node that has the error.
      * @param \Exception $ex The exception that represents the low-level error.
+     * @param array $context Custom context information for the exception.
      * @return CompileException Returns a new exception that can be thrown.
      */
-    public function createCompilerException(\DOMNode $node, \Exception $ex) {
-        $result = [
+    public function createCompilerException(\DOMNode $node, \Exception $ex, array $context = []) {
+        $result = $context + [
             'path' => $this->getPath(),
+            'source' => '',
+            'sourcePosition' => null,
             'line' => $line = $node->getLineNo(),
+            'lines' => []
         ];
         $message = $ex->getMessage();
 
         if ($ex instanceof SyntaxError) {
             list($error, $position) = $this->splitSyntaxError($ex);
-            $result['context'] = [
-                'source' => $node instanceof \DOMAttr ? $node->value : $node->nodeValue,
-                'position' => $position
-            ];
+            $result['source'] = $result['source'] ?: ($node instanceof \DOMAttr ? $node->value : $node->nodeValue);
+            if (!isset($context['sourcePosition'])) {
+                $result['sourcePosition'] = $position;
+            }
         }
 
         if (!empty($this->source)) {

@@ -88,11 +88,23 @@ EOT;
     public function testExprAttributeError() {
         $r = $this->renderFixture('expr-error');
 
-        $this->assertTrue(strpos($r, 'Error compiling expr-error near line 1.') !== false);
+        $this->assertContains('Error compiling expr-error near line 1.', $r);
     }
 
+    /**
+     * Test an error in a `<script type="ebi">` tag.
+     */
     public function testExprScriptError() {
-        $r = $this->renderFixture('script-expr-error');
+        $r = $this->renderFixture('expr-error-script');
+        $this->assertContains('Error compiling expr-error-script near', $r);
+    }
+
+    /**
+     * Test an error from an inline expression between `{...}`.
+     */
+    public function testExprInlineError() {
+        $r = $this->renderFixture('expr-error-inline');
+        $this->assertContains('Error compiling expr-error-inline near', $r);
     }
 
     /**

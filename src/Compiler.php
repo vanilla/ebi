@@ -458,7 +458,12 @@ class Compiler {
                 if (preg_match('`^{\s*unescape\((.+)\)\s*}$`', $text, $m)) {
                     $out->echoCode($this->expr($m[1], $out));
                 } else {
-                    $out->echoCode('htmlspecialchars('.$this->expr(substr($text, 1, -1), $out).')');
+                    try {
+                        $expr = substr($text, 1, -1);
+                        $out->echoCode('htmlspecialchars('.$this->expr($expr, $out).')');
+                    } catch (SyntaxError $ex) {
+                        throw $out->createCompilerException($node->parentNode, $ex, ['source' => $expr]);
+                    }
                 }
             } else {
 //                if ($i === 0) {
