@@ -83,6 +83,15 @@ EOT;
     }
 
     /**
+     * Test a basic error expression.
+     */
+    public function testExprAttributeError() {
+        $r = $this->renderFixture('expr-error');
+
+        $this->assertTrue(strpos($r, 'Error compiling expr-error near line 1.') !== false);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

@@ -8,6 +8,8 @@
 namespace Ebi;
 
 
+use Symfony\Component\ExpressionLanguage\SyntaxError;
+
 class CompilerBuffer {
     const STYLE_JOIN = 'join';
     const STYLE_ARRAY = 'array';
@@ -27,6 +29,10 @@ class CompilerBuffer {
     private $basename;
 
     private $style = self::STYLE_JOIN;
+
+    private $source;
+
+    private $path;
 
     /**
      * @var array
@@ -220,5 +226,91 @@ class CompilerBuffer {
 
     public function getAllScopes() {
         return $this->current->getAllScopes();
+    }
+
+    /**
+     * Create a new **CompileException** with proper context.
+     *
+     * @param \DOMNode $node The node that has the error.
+     * @param \Exception $ex The exception that represents the low-level error.
+     * @return CompileException Returns a new exception that can be thrown.
+     */
+    public function createCompilerException(\DOMNode $node, \Exception $ex) {
+        $result = [
+            'path' => $this->getPath(),
+            'line' => $line = $node->getLineNo(),
+        ];
+        $message = $ex->getMessage();
+
+        if ($ex instanceof SyntaxError) {
+            list($error, $position) = $this->splitSyntaxError($ex);
+            $result['context'] = [
+                'source' => $node instanceof \DOMAttr ? $node->value : $node->textContent,
+                'position' => $position
+            ];
+        }
+
+        if (!empty($this->source)) {
+            $allLines = explode("\n", $this->source);
+
+            $lines = [];
+            for ($i = max(0, $line - 3); $i < $line + 2; $i++) {
+                if (isset($allLines[$i])) {
+                    $lines[$i + 1] = $allLines[$i];
+                }
+            }
+
+            $result['lines'] = $lines;
+        }
+
+        return new CompileException($message, $result, $ex);
+    }
+
+    private function splitSyntaxError(SyntaxError $ex) {
+        if (preg_match('`^(.*) around position (.*)\.$`', $ex->getMessage(), $m)) {
+            return [$m[1], $m[2]];
+        } else {
+            return [$ex->getMessage(), 0];
+        }
+    }
+
+    /**
+     * Get the source.
+     *
+     * @return mixed Returns the source.
+     */
+    public function getSource() {
+        return $this->source;
+    }
+
+    /**
+     * Set the source.
+     *
+     * @param mixed $source
+     * @return $this
+     */
+    public function setSource($source) {
+        $this->source = $source;
+        return $this;
+    }
+
+    /**
+     * Get the path.
+     *
+     * @return mixed Returns the path.
+     */
+    public function getPath() {
+        return $this->path;
+    }
+
+    /**
+     * Set the path.
+     *
+     * @param mixed $path
+     * @return $this
+     */
+    public function setPath($path) {
+        $this->path = $path;
+        return $this;
     }
 }

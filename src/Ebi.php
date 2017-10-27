@@ -96,6 +96,8 @@ class Ebi {
                 htmlspecialchars($props['message'])."\n-->\n";
 
         });
+
+        $this->defineComponent('@compile-exception', [$this, 'writeCompileException']);
     }
 
     /**
@@ -214,10 +216,61 @@ class Ebi {
 
         if (!file_exists($cachePath)) {
             $src = $this->templateLoader->load($component);
-            return $this->compile($componentKey, $src, $cacheKey);
+            try {
+                return $this->compile($componentKey, $src, $cacheKey);
+            } catch (CompileException $ex) {
+                $props = ['message' => $ex->getMessage()] + $ex->getContext();
+                return $this->components[$componentKey] = function() use ($props) {
+                    $this->write('@compile-exception', $props);
+                };
+            }
         } else {
             return $this->includeComponent($componentKey, $cachePath);
         }
+    }
+
+    protected function writeCompileException($props) {
+        echo "\n<section class=\"ebi-ex\">\n",
+            '<h2>Error compiling '.htmlspecialchars($props['path'])." near line {$props['line']}.</h2>\n";
+
+        echo '<p class="ebi-ex-message">'.htmlspecialchars($props['message'])."</p>\n";
+
+        if (!empty($props['context'])) {
+            $source = $props['context']['source'];
+            if (isset($props['context']['position'])) {
+                $pos = $props['context']['position'];
+                $source = htmlspecialchars(substr($source, 0, $pos)).
+                    '<mark class="ebi-ex-highlight">'.htmlspecialchars(substr($source, $pos, 1)).'</mark>'.
+                    htmlspecialchars(substr($source, $pos + 1));
+            } else {
+                $source = htmlspecialchars($source);
+            }
+
+            echo '<pre class="ebi-ex-source ebi-ex-context"><code>',
+                $source,
+                "</code></pre>\n";
+        }
+
+        if (!empty($props['lines'])) {
+            echo '<pre class="ebi-ex-source ebi-ex-lines">';
+
+            foreach ($props['lines'] as $i => $line) {
+                echo '<code class="ebi-ex-line">';
+
+                $str = sprintf("%3d. %s", $i, htmlspecialchars($line));
+                if ($i === $props['line']) {
+                    echo "<mark class=\"ebi-ex-highlight\">$str</mark>";
+                } else {
+                    echo $str;
+                }
+
+                echo "</code>\n";
+            }
+
+            echo "</pre>\n";
+        }
+
+        echo "</section>\n";
     }
 
     /**

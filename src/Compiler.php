@@ -10,6 +10,7 @@ namespace Ebi;
 use DOMAttr;
 use DOMElement;
 use DOMNode;
+use Symfony\Component\ExpressionLanguage\SyntaxError;
 
 class Compiler {
     const T_IF = 'x-if';
@@ -307,12 +308,17 @@ class Compiler {
     }
 
     public function compile($src, array $options = []) {
-        $options += ['basename' => '', 'runtime' => true];
+        $options += ['basename' => '', 'path' => '', 'runtime' => true];
 
         $src = trim($src);
 
+        $out = new CompilerBuffer();
+
+        $out->setBasename($options['basename']);
+        $out->setSource($src);
+        $out->setPath($options['path']);
+
         $dom = new \DOMDocument();
-        libxml_use_internal_errors(true);
 
         $fragment = false;
         if (strpos($src, '<html') === false) {
@@ -320,12 +326,9 @@ class Compiler {
             $fragment = true;
         }
 
+        libxml_use_internal_errors(true);
         $dom->loadHTML($src, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOCDATA | LIBXML_NOXMLDECL);
 //        $arr = $this->domToArray($dom);
-
-        $out = new CompilerBuffer();
-
-        $out->setBasename($options['basename']);
 
         if ($options['runtime']) {
             $name = var_export($options['basename'], true);
@@ -487,18 +490,34 @@ class Compiler {
         return $values;
     }
 
-    protected function expr($expr, CompilerBuffer $output, DOMAttr $attr = null) {
-        $names = $output->getScopeVariables();
+    /**
+     * Compile the PHP for an expression
+     *
+     * @param string $expr The expression to compile.
+     * @param CompilerBuffer $out The current output buffer.
+     * @param DOMAttr|null $attr The owner of the expression.
+     * @return string Returns a string of PHP code.
+     */
+    protected function expr($expr, CompilerBuffer $out, DOMAttr $attr = null) {
+        $names = $out->getScopeVariables();
 
-        $compiled = $this->expressions->compile($expr, function ($name) use ($names) {
-            if (isset($names[$name])) {
-                return $names[$name];
-            } elseif ($name[0] === '@') {
-                return 'this->meta['.var_export(substr($name, 1), true).']';
+        try {
+            $compiled = $this->expressions->compile($expr, function ($name) use ($names) {
+                if (isset($names[$name])) {
+                    return $names[$name];
+                } elseif ($name[0] === '@') {
+                    return 'this->meta['.var_export(substr($name, 1), true).']';
+                } else {
+                    return $names['this'].'['.var_export($name, true).']';
+                }
+            });
+        } catch (SyntaxError $ex) {
+            if ($attr !== null) {
+                throw $out->createCompilerException($attr, $ex);
             } else {
-                return $names['this'].'['.var_export($name, true).']';
+                throw $ex;
             }
-        });
+        }
 
         if ($attr !== null && null !== $fn = $this->getAttributeFunction($attr)) {
             $compiled = call_user_func($fn, $compiled);
@@ -842,7 +861,7 @@ class Compiler {
 
     protected function compileIf(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
         $this->compileTagComment($node, $attributes, $special, $out);
-        $expr = $this->expr($special[self::T_IF]->value, $out);
+        $expr = $this->expr($special[self::T_IF]->value, $out, $special[self::T_IF]);
         unset($special[self::T_IF]);
 
         $elseNode = $this->findSpecialNode($node, self::T_ELSE, self::T_IF);
@@ -1110,12 +1129,16 @@ class Compiler {
         $str = $raw = $node->nodeValue;
         $expr = $this->expr($str, $out);
 
-        if (!empty($special[self::T_AS]) && preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
+        if (!empty($special[self::T_AS])) {
+            if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
             // The template specified an x-as attribute to alias the with expression.
             $out->depth(+1);
             $scope = [$m[1] => $out->depthName('expr')];
             $out->pushScope($scope);
             $out->appendCode('$'.$out->depthName('expr')." = $expr;\n");
+            } else {
+
+            }
         } elseif (!empty($special[self::T_UNESCAPE])) {
             $out->echoCode($expr);
         } else {
@@ -1137,5 +1160,8 @@ class Compiler {
         }
 
         $this->compileCloseTag($node, $special, $out);
+    }
+
+    private function compileCompilerException(CompileException $ex, CompilerBuffer $out) {
     }
 }
