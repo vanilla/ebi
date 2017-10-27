@@ -108,6 +108,31 @@ EOT;
     }
 
     /**
+     * Test a basic valueless HTML5 attribute.
+     */
+    public function testHtml5Attribute() {
+        $r = $this->renderFixture('html5-attribute');
+        $this->assertEquals('<input type="checkbox" checked />', $r);
+    }
+
+    /**
+     * Since style tags may parse differently than other tags lets do a basic test.
+     */
+    public function testStyleTag() {
+        $r = $this->renderFixture('style-tag');
+
+        $expected = <<<EOT
+<style>
+.foo {
+        color: #000;
+    }
+</style>
+EOT;
+
+        $this->assertEquals($expected, $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {

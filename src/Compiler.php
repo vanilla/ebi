@@ -452,7 +452,6 @@ class Compiler {
         $text = $this->ltrim($this->rtrim($node->nodeValue, $node, $out), $node, $out);
 
         $items = $this->splitExpressions($text);
-
         foreach ($items as $i => list($text, $offset)) {
             if (preg_match('`^{\S`', $text)) {
                 if (preg_match('`^{\s*unescape\((.+)\)\s*}$`', $text, $m)) {
@@ -462,7 +461,7 @@ class Compiler {
                         $expr = substr($text, 1, -1);
                         $out->echoCode('htmlspecialchars('.$this->expr($expr, $out).')');
                     } catch (SyntaxError $ex) {
-                        throw $out->createCompilerException($node->parentNode, $ex, ['source' => $expr]);
+                        throw $out->createCompilerException($node, $ex, ['source' => $expr]);
                     }
                 }
             } else {
