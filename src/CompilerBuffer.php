@@ -50,7 +50,7 @@ class CompilerBuffer {
         ];
 
         $this->buffers = [];
-        $this->nodeProps = new \SplObjectStorage();
+        $this->nodeProps = isset($defaults['nodeProps']) ? $defaults['nodeProps'] : new \SplObjectStorage();
         $this->style = $style;
         $this->defaults = $defaults;
         $this->select('');
@@ -321,5 +321,14 @@ class CompilerBuffer {
     public function setPath($path) {
         $this->path = $path;
         return $this;
+    }
+
+    /**
+     * Get the entire node property array.
+     *
+     * @return \SplObjectStorage Returns the node properties.
+     */
+    public function getNodePropArray() {
+        return $this->nodeProps;
     }
 }

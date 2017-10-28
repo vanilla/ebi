@@ -743,9 +743,9 @@ class Compiler {
             'baseIndent' => $out->getIndent(),
             'indent' => $out->getIndent() + 1,
             'depth' => $out->getDepth(),
-            'scopes' => $out->getAllScopes()
+            'scopes' => $out->getAllScopes(),
+            'nodeProps' => $out->getNodePropArray()
         ]);
-        $blocksOut->setNodeProp($parent, self::T_INCLUDE, true);
 
         if ($this->isEmptyNode($parent)) {
             return $blocksOut;
