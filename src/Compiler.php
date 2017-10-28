@@ -1083,7 +1083,7 @@ class Compiler {
         }
 
         $sib = $node->previousSibling ?: $node->parentNode;
-        if ($sib === null || !$sib instanceof \DOMElement || $out->getNodeProp($sib, 'skip') || $sib->tagName === self::T_X) {
+        if ($this->isSkippable($sib, $out)) {
             return ltrim($text);
         }
 
@@ -1098,6 +1098,27 @@ class Compiler {
         return $text;
     }
 
+    /**
+     * Whether or not a node can be skipped for the purposes of trimming whitespace.
+     *
+     * @param DOMNode|null $node The node to test.
+     * @param CompilerBuffer|null $out The compiler information.
+     * @return bool Returns **true** if whitespace can be trimmed right up to the node or **false** otherwise.
+     */
+    private function isSkippable(\DOMNode $node = null, CompilerBuffer $out = null) {
+        /* @var \DOMElement $node */
+        if ($node === null || !$node instanceof \DOMElement || $out->getNodeProp($node, 'skip')
+            || $node->tagName === self::T_X
+            || ($node->tagName === 'script' && $node->hasAttribute(self::T_AS)) // expression assignment
+            || ($node->hasAttribute(self::T_WITH) && $node->hasAttribute(self::T_AS)) // with assignment
+            || ($node->hasAttribute(self::T_BLOCK) || $node->hasAttribute(self::T_COMPONENT))
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function rtrim($text, \DOMNode $node, CompilerBuffer $out) {
         if ($this->inPre($node)) {
             return $text;
@@ -1105,7 +1126,7 @@ class Compiler {
 
         $sib = $node->nextSibling ?: $node->parentNode;
 
-        if ($sib === null || !$sib instanceof \DOMElement || $out->getNodeProp($sib, 'skip') || $sib->tagName === self::T_X) {
+        if ($this->isSkippable($sib, $out)) {
             return rtrim($text);
         }
 
