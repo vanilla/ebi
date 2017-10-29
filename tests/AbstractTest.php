@@ -13,6 +13,38 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
 abstract class AbstractTest extends TestCase {
+    /**
+     * Assert that two HTML strings are functionally equivalent, accounting for variances in whitespace.
+     *
+     * @param string $a
+     * @param string $b
+     * @param $message
+     */
+    public function assertHtmlEquals($a, $b, $message = '') {
+        $a1 = $this->normalizeHtml($a);
+        $b1 = $this->normalizeHtml($b);
+
+        $this->assertEquals($a1, $b1, $message);
+    }
+
+    /**
+     * Normalize an HTML string.
+     *
+     * @param $html
+     * @return mixed|string
+     */
+    protected function normalizeHtml($html) {
+        // Remove multiple whitespace characters.
+        $html = preg_replace('`\s+`', ' ', $html);
+        // Tidy the html.
+        $opts = array(
+            'tidy' => '2s2n'
+        );
+
+        $html = trim(\Htmlawed::filter($html, $opts));
+        return $html;
+    }
+
     public function provideSpecTests($file) {
         $path = __DIR__."/specs/$file";
         if (!file_exists($path)) {

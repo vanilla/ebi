@@ -603,4 +603,19 @@ class Ebi {
             return htmlspecialchars($val);
         }
     }
+
+    /**
+     * Write children blocks.
+     *
+     * @param array|callable|null $children The children blocks to write.
+     */
+    protected function writeChildren($children) {
+        if (empty($children)) {
+            return;
+        } elseif (is_array($children)) {
+            array_map([$this, 'writeChildren'], $children);
+        } else {
+            $children();
+        }
+    }
 }
