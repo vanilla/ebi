@@ -135,7 +135,7 @@ EOT;
      */
     public function testScriptAsError() {
         $r = $this->renderFixture('script-as-error');
-        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+        $this->assertContains("Invalid identifier in x-as attribute.", $r);
     }
 
     /**
@@ -143,7 +143,7 @@ EOT;
      */
     public function testWithAsError() {
         $r = $this->renderFixture('with-as-error');
-        $this->assertContains("Invalid identifier &quot;@!$#&quot; in x-as attribute.", $r);
+        $this->assertContains("Invalid identifier in x-as attribute.", $r);
     }
 
     /**
@@ -151,7 +151,15 @@ EOT;
      */
     public function testEachAsError() {
         $r = $this->renderFixture('each-as-error');
-        $this->assertContains("Invalid identifier &quot;!blerg ifd&quot; in x-as attribute.", $r);
+        $this->assertContains("Invalid identifier in x-as attribute.", $r);
+    }
+
+    /**
+     * Expression assignments cannot be declared inside child blocks.
+     */
+    public function testExprBlockError() {
+        $r = $this->renderFixture('expr-block-error');
+        $this->assertContains("Expressions with x-as assignments cannot be declared inside child blocks.", $r);
     }
 
     /**

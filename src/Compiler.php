@@ -959,7 +959,7 @@ class Compiler {
             } else {
                 throw $out->createCompilerException(
                     $special[self::T_AS],
-                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                    new \Exception("Invalid identifier in x-as attribute.")
                 );
             }
         }
@@ -1061,7 +1061,7 @@ class Compiler {
             } else {
                 throw $out->createCompilerException(
                     $special[self::T_AS],
-                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                    new \Exception("Invalid identifier in x-as attribute.")
                 );
             }
         }
@@ -1200,7 +1200,7 @@ class Compiler {
     }
 
     /**
-     * Compile an x-expr node.
+     * Compile an `<script type="ebi">` node.
      *
      * @param DOMElement $node The node to compile.
      * @param DOMAttr[] $attributes The node's attributes.
@@ -1216,7 +1216,16 @@ class Compiler {
             throw $out->createCompilerException($node, $ex);
         }
 
-        if (!empty($special[self::T_AS])) {
+        if (isset($special[self::T_AS])) {
+            if (null !== $this->closest($node, function (\DOMNode $n) use ($out) {
+                return $out->getNodeProp($n, self::T_INCLUDE);
+            })) {
+                throw $out->createCompilerException(
+                    $node,
+                    new \Exception("Expressions with x-as assignments cannot be declared inside child blocks.")
+                );
+            }
+
             if (preg_match(self::IDENT_REGEX, $special[self::T_AS]->value, $m)) {
                 // The template specified an x-as attribute to alias the with expression.
                 $out->depth(+1);
@@ -1226,7 +1235,7 @@ class Compiler {
             } else {
                 throw $out->createCompilerException(
                     $special[self::T_AS],
-                    new \Exception("Invalid identifier \"{$special[self::T_AS]->value}\" in x-as attribute.")
+                    new \Exception("Invalid identifier in x-as attribute.")
                 );
             }
         } elseif (!empty($special[self::T_UNESCAPE])) {
@@ -1234,6 +1243,20 @@ class Compiler {
         } else {
             $out->echoCode($this->compileEscape($expr));
         }
+    }
+
+    /**
+     *
+     *
+     * @param DOMNode $node
+     * @param callable $test
+     * @return bool
+     */
+    private function closest(\DOMNode $node, callable $test) {
+        for ($visitor = $node; $visitor !== null && !$test($visitor); $visitor = $visitor->parentNode) {
+            //
+        }
+        return $visitor;
     }
 
     /**
