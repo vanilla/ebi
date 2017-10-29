@@ -58,17 +58,35 @@ class CompilerBuffer {
 
     /**
      * Select a specific component buffer.
-     * @param $component
+     * @param string $component The name of the component to select.
+     * @param bool $add Whether to add a new component if there is already a compile buffer with the same name.
      */
-    public function select($component) {
+    public function select($component, $add = false) {
         $previous = $this->currentName;
         $this->currentName = $component;
 
         if (!array_key_exists($component, $this->buffers)) {
             $this->buffers[$component] = $buffer = new ComponentBuffer($this->defaults);
+        } elseif ($add) {
+            if (is_array($this->buffers[$component])) {
+                $this->buffers[$component][] = $buffer = new ComponentBuffer($this->defaults);
+            } else {
+                $this->buffers[$component] = [
+                    $this->buffers[$component],
+                    $buffer = new ComponentBuffer($this->defaults)
+                ];
+            }
+        } else {
+            $buffer = $this->buffers[$component];
+            if (is_array($buffer)) {
+                $buffer = end($buffer);
+                if ($previous === $component) {
+                    $buffer = prev($buffer);
+                }
+            }
         }
 
-        $this->current =& $this->buffers[$component];
+        $this->current = $buffer;
 
         return $previous;
     }
@@ -128,23 +146,38 @@ class CompilerBuffer {
     private function flushArray() {
         $result = [];
 
-        foreach ($this->buffers as $name => $buffer) {
-            $flushed = $buffer->flush();
+        foreach ($this->buffers as $name => $buffers) {
+            $flushed = [];
+            if (is_array($buffers)) {
+                foreach ($buffers as $buffer) {
+                    $flushed[] = $buffer->flush();
+                }
+            } else {
+                $flushed = [$buffers->flush()];
+            }
+
+            $flushed = array_filter($flushed);
             if (empty($flushed)) {
                 continue;
             }
 
-            if ($name === '') {
-                $result[] = $flushed;
+            if (count($flushed) === 1) {
+                $children = reset($flushed);
             } else {
-                $result[] = var_export($name, true).' => '.$flushed;
+                $children = "[\n".implode(",\n", $flushed)."\n".$this->px(+1).']';
+            }
+
+            if ($name === '') {
+                $result[] = $children;
+            } else {
+                $result[] = var_export($name, true).' => '.ltrim($children);
             }
         }
 
         if (empty($result)) {
             return '[]';
         } else {
-            return "[\n".implode(",\n\n", $result)."\n".$this->px().']';
+            return "[\n".implode(",\n\n".$this->px(+1), $result)."\n".$this->px().']';
         }
     }
 

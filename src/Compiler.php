@@ -661,13 +661,20 @@ class Compiler {
         }
 
         $name = strtolower($special[self::T_BLOCK]->value);
+        if (empty($name)) {
+            throw $out->createCompilerException($special[self::T_BLOCK], new \Exception("Block names cannot be empty."));
+        }
+        if (!preg_match(self::IDENT_REGEX, $name)) {
+            throw $out->createCompilerException($special[self::T_BLOCK], new \Exception("The block name isn't a valid identifier."));
+        }
+
         unset($special[self::T_BLOCK]);
 
-        $prev = $out->select($name);
+        $prev = $out->select($name, true);
 
         $vars = array_filter(array_unique($out->getScopeVariables()));
         $vars[] = 'children';
-        $use = '$'.implode(', $', array_unique($out->getScopeVariables()));
+        $use = '$'.implode(', $', array_unique($vars));
 
         $out->appendCode("function () use ($use) {\n");
         $out->pushScope(['this' => 'props']);
@@ -746,6 +753,7 @@ class Compiler {
             'scopes' => $out->getAllScopes(),
             'nodeProps' => $out->getNodePropArray()
         ]);
+        $blocksOut->setSource($out->getSource());
 
         if ($this->isEmptyNode($parent)) {
             return $blocksOut;
@@ -1082,10 +1090,16 @@ class Compiler {
             return $text;
         }
 
-        $sib = $node->previousSibling ?: $node->parentNode;
-        if ($this->isSkippable($sib, $out)) {
+
+        for ($sib = $node->previousSibling; $sib !== null && $this->canSkip($sib, $out); $sib = $sib->previousSibling) {
+            //
+        }
+        if ($sib === null) {
             return ltrim($text);
         }
+//        if ($this->canSkip($sib, $out)) {
+//            return ltrim($text);
+//        }
 
         $text = preg_replace('`^\s*\n\s*`', "\n", $text, -1, $count);
         if ($count === 0) {
@@ -1105,15 +1119,25 @@ class Compiler {
      * @param CompilerBuffer|null $out The compiler information.
      * @return bool Returns **true** if whitespace can be trimmed right up to the node or **false** otherwise.
      */
-    private function isSkippable(\DOMNode $node = null, CompilerBuffer $out = null) {
-        /* @var \DOMElement $node */
-        if ($node === null || !$node instanceof \DOMElement || $out->getNodeProp($node, 'skip')
-            || $node->tagName === self::T_X
-            || ($node->tagName === 'script' && $node->hasAttribute(self::T_AS)) // expression assignment
-            || ($node->hasAttribute(self::T_WITH) && $node->hasAttribute(self::T_AS)) // with assignment
-            || ($node->hasAttribute(self::T_BLOCK) || $node->hasAttribute(self::T_COMPONENT))
-        ) {
+    private function canSkip(\DOMNode $node, CompilerBuffer $out) {
+        if ($out->getNodeProp($node, 'skip')) {
             return true;
+        }
+
+        switch ($node->nodeType) {
+            case XML_TEXT_NODE:
+                return false;
+            case XML_COMMENT_NODE:
+                return true;
+            case XML_ELEMENT_NODE:
+                /* @var \DOMElement $node */
+                if ($node->tagName === self::T_X
+                    || ($node->tagName === 'script' && $node->hasAttribute(self::T_AS)) // expression assignment
+                    || ($node->hasAttribute(self::T_WITH) && $node->hasAttribute(self::T_AS)) // with assignment
+                    || ($node->hasAttribute(self::T_BLOCK) || $node->hasAttribute(self::T_COMPONENT))
+                ) {
+                    return true;
+                }
         }
 
         return false;
@@ -1124,9 +1148,10 @@ class Compiler {
             return $text;
         }
 
-        $sib = $node->nextSibling ?: $node->parentNode;
-
-        if ($this->isSkippable($sib, $out)) {
+        for ($sib = $node->nextSibling; $sib !== null && $this->canSkip($sib, $out); $sib = $sib->nextSibling) {
+            //
+        }
+        if ($sib === null) {
             return rtrim($text);
         }
 
@@ -1155,16 +1180,21 @@ class Compiler {
         $child = $special[self::T_CHILDREN];
         unset($special[self::T_CHILDREN]);
 
-        $key = $child->value === '' ? 0 : $child->value;
-        $keyStr = var_export($key, true);
+        $name = $child->value === '' ? 0 : strtolower($child->value);
+        if ($name !== 0) {
+            if (empty($name)) {
+                throw $out->createCompilerException($special[self::T_BLOCK], new \Exception("Block names cannot be empty."));
+            }
+            if (!preg_match(self::IDENT_REGEX, $name)) {
+                throw $out->createCompilerException($special[self::T_BLOCK], new \Exception("The block name isn't a valid identifier."));
+            }
+        }
+
+        $keyStr = var_export($name, true);
 
         $this->compileOpenTag($node, $attributes, $special, $out, true);
 
-        $out->appendCode("if (isset(\$children[{$keyStr}])) {\n");
-        $out->indent(+1);
-        $out->appendCode("\$children[{$keyStr}]();\n");
-        $out->indent(-1);
-        $out->appendCode("}\n");
+        $out->appendCode("\$this->writeChildren(\$children[{$keyStr}]);\n");
 
         $this->compileCloseTag($node, $special, $out, true);
     }

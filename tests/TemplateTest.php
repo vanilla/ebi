@@ -122,14 +122,12 @@ EOT;
         $r = $this->renderFixture('style-tag');
 
         $expected = <<<EOT
-<style>
-.foo {
+<style>.foo {
         color: #000;
-    }
-</style>
+}</style>
 EOT;
 
-        $this->assertEquals($expected, $r);
+        $this->assertHtmlEquals($expected, $r);
     }
 
     /**
@@ -176,6 +174,14 @@ EOT;
     public function testBlockError() {
         $r = $this->renderFixture('block-error');
         $this->assertContains('Blocks must be direct descendants of component includes.', $r);
+    }
+
+    /**
+     * Multiple blocks with the same name should all render.
+     */
+    public function testMultipleBlocks() {
+        $r = $this->renderFixture('multiple-blocks');
+        $this->assertHtmlEquals('<div><div>a</div><div>b</div></div>', $r);
     }
 
     /**
