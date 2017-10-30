@@ -1208,12 +1208,19 @@ class Compiler {
      * @param CompilerBuffer $out The compiler output.
      */
     private function compileExpressionNode(DOMElement $node, array $attributes, array $special, CompilerBuffer $out) {
-        $str = $raw = $node->nodeValue;
+        $str = $node->nodeValue;
 
         try {
             $expr = $this->expr($str, $out);
         } catch (SyntaxError $ex) {
-            throw $out->createCompilerException($node, $ex);
+            $context = [];
+            if (preg_match('`^(.*) around position (\d*)\.$`', $ex->getMessage(), $m)) {
+                $add = substr_count($str, "\n", 0, $m[2]);
+
+                $context['line'] = $node->getLineNo() + $add;
+            }
+
+            throw $out->createCompilerException($node, $ex, $context);
         }
 
         if (isset($special[self::T_AS])) {
