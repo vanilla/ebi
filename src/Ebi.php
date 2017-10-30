@@ -573,7 +573,7 @@ class Ebi {
      * @param mixed $value The value of the attribute.
      * @return string Returns the attribute definition or an empty string.
      */
-    protected function attribute($name, $value) {
+    public function attribute($name, $value) {
         if (substr($name, 0, 5) === 'aria-' && is_bool($value)) {
             $value = $value ? 'true' : 'false';
         }
@@ -592,7 +592,7 @@ class Ebi {
      * @param mixed $val The value to escape.
      * @return string The escaped value.
      */
-    protected function escape($val = null) {
+    public function escape($val = null) {
         if (is_array($val)) {
             return '[array]';
         } elseif ($val instanceof \DateTimeInterface) {
@@ -609,7 +609,7 @@ class Ebi {
      *
      * @param array|callable|null $children The children blocks to write.
      */
-    protected function writeChildren($children) {
+    public function writeChildren($children) {
         if (empty($children)) {
             return;
         } elseif (is_array($children)) {
