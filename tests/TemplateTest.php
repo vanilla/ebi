@@ -193,6 +193,14 @@ EOT;
     }
 
     /**
+     * Test bug with dot syntax inside functions.
+     */
+    public function testFunctionDotSyntax() {
+        $r = $this->renderFixture('dot-syntax', ['foo' => ['bar' => [1, 2, 3]]]);
+        $this->assertEquals('3', $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
