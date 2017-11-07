@@ -1057,6 +1057,9 @@ class Compiler {
                 $scope = [$m[2] => $as[1]];
                 if (!empty($m[1])) {
                     $scope[$m[1]] = $as[0] = $out->depthName('i', 1);
+
+                    // Add loop tracking variables.
+                    $d = $out->depthName('', 1);
                 }
             } else {
                 throw $out->createCompilerException(
@@ -1066,6 +1069,12 @@ class Compiler {
             }
         }
         unset($special[self::T_AS]);
+
+        if (isset($d)) {
+            $out->appendCode("\$count$d = count($each);\n");
+            $out->appendCode("\$index$d = -1;\n");
+        }
+
         if (empty($as[0])) {
             $out->appendCode("foreach ($each as \${$as[1]}) {\n");
         } else {
@@ -1074,6 +1083,12 @@ class Compiler {
         $out->depth(+1);
         $out->indent(+1);
         $out->pushScope($scope);
+
+        if (isset($d)) {
+            $out->appendCode("\$index$d++;\n");
+            $out->appendCode("\$first$d = \$index$d === 0;\n");
+            $out->appendCode("\$last$d = \$index$d === \$count$d - 1;\n");
+        }
 
         foreach ($node->childNodes as $childNode) {
             $this->compileNode($childNode, $out);
@@ -1253,15 +1268,15 @@ class Compiler {
     }
 
     /**
-     *
+     * Similar to jQuery's closest method.
      *
      * @param DOMNode $node
      * @param callable $test
-     * @return bool
+     * @return DOMNode
      */
     private function closest(\DOMNode $node, callable $test) {
         for ($visitor = $node; $visitor !== null && !$test($visitor); $visitor = $visitor->parentNode) {
-            //
+            // Do nothing. The logic is all in the loop.
         }
         return $visitor;
     }

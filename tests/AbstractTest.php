@@ -37,9 +37,10 @@ abstract class AbstractTest extends TestCase {
         // Remove multiple whitespace characters.
         $html = preg_replace('`\s+`', ' ', $html);
         // Tidy the html.
-        $opts = array(
-            'tidy' => '2s2n'
-        );
+        $opts = [
+            'tidy' => '2s2n',
+            'unique_ids' => '0',
+        ];
 
         $html = trim(\Htmlawed::filter($html, $opts));
         return $html;

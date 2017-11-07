@@ -208,6 +208,19 @@ EOT;
         $this->assertEquals('123', $r);
     }
 
+    public function testEachSpecial() {
+        $r = $this->renderFixture('each-special', ['a' => 1, 'b' => 2]);
+
+        $expected = <<<EOT
+<ul>
+<li id="a" data-index="0" class="first">1</li>
+<li id="b" data-index="1" class="last">2</li>
+</ul>
+EOT;
+
+        $this->assertHtmlEquals($expected, $r);
+    }
+
     /**
      *
      */
