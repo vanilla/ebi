@@ -284,8 +284,8 @@ class Compiler {
 
     private function getFunctionCompiler($name, $function) {
         $var = var_export(strtolower($name), true);
-        $fn = function ($expr) use ($var) {
-            return "\$this->call($var, $expr)";
+        $fn = function (...$args) use ($var) {
+            return "\$this->call($var, ".implode(', ', $args).')';
         };
 
         if (is_string($function)) {

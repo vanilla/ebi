@@ -201,6 +201,14 @@ EOT;
     }
 
     /**
+     * Test compilation of a function call with multiple arguments.
+     */
+    public function testMultipleFunctionArgsCall() {
+        $r = $this->renderFixture('multiple-call-args');
+        $this->assertEquals('123', $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
