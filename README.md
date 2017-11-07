@@ -182,7 +182,7 @@ Loop over elements.
 
 ```html
 <ul x-each="people">
-    <li>Hi {first} {last}!</li>
+    <li>Hi {firstName} {lastName}!</li>
 </ul>
 ```
 
@@ -190,9 +190,9 @@ Loop over elements.
 echo '<ul>';
 foreach ($props['people'] as $props1) {
     echo 'Hi ',
-        $this->escape($props1['first']),
+        $this->escape($props1['firstName']),
         ' ',
-        $this->escape($props1['last']);
+        $this->escape($props1['lastName']);
 }
 echo '</ul>';
 ```
@@ -209,7 +209,7 @@ Name the iterator element so that you can still reference the parent.
 
 ```php
 echo '<ul>';
-foreach ($conext['comments'] as $i1 => $props1) {
+foreach ($props['comments'] as $i1 => $props1) {
     echo '<li>',
         $this->escape($props['name']),
         ': ',
@@ -222,6 +222,37 @@ echo '</ul>';
 ```
 
 *Tip: If you want to access the key of an array, but still want to access its values without dot syntax then you can use `x-as="key this"`.*
+
+#### Iterator Variables
+
+When you specify **x-as** with an **x-each** there three special iterator variables you'll have access to: **index, first, last**.
+
+```html
+<ul x-each="this" x-as="i item">
+    <li id="{i}" data-index="{i.index}" class="{{first: i.first, last: i.last}}">{item}</li>
+</ul>
+```
+
+So if you specify a key in **x-as** you can access the special variables as if they were properties of the key. The resulting PHP is a bit more verbose, but straight forward enough.
+
+```php
+echo '<ul>';
+$count1 = count($props);
+$index1 = -1;
+foreach ($props as $i1 => $props1) {
+    $index1++;
+    $first1 = $index1 === 0;
+    $last1 = $index1 === $count1 - 1;
+    echo '<li',
+        $this->attribute('id', $i1),
+        $this->attribute('data-index', $index1),
+        $this->attribute('class', $this->attributeClass(array("first" => $first1, "last" => $last1))),
+        '>',
+        $this->escape($props1),
+        '</li>';
+}
+echo '</ul>';
+```
 
 ### x-empty
 
