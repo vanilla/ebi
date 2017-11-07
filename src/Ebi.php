@@ -89,6 +89,7 @@ class Ebi {
         $this->defineFunction('urlencode', 'rawurlencode');
 
         $this->defineFunction('@class', [$this, 'attributeClass']);
+        $this->defineFunction('@style', [$this, 'attributeStyle']);
 
         // Define a simple component not found component to help troubleshoot.
         $this->defineComponent('@component-not-found', function ($props) {
@@ -462,6 +463,44 @@ class Ebi {
                 }
             }
             return implode(' ', $classes);
+        } else {
+            return (string)$expr;
+        }
+    }
+
+    /**
+     * Render a variable appropriately for a style attribute.
+     *
+     * This function expects a string or an array. If an array is supplied then the keys represent style properties and
+     * the values are style values.
+     *
+     * @param mixed $expr The expression to render.
+     * @return string Returns a style attribute.
+     */
+    public function attributeStyle($expr) {
+        static $false = ['display' => 'none', 'visibility' => 'hidden', 'border' => 'none', 'box-shadow' => 'none'];
+        static $true = ['visibility' => 'visible'];
+
+        if (is_array($expr)) {
+            $style = [];
+            foreach ($expr as $prop => $value) {
+                if ($value === false && isset($false[$prop])) {
+                    $value = $false[$prop];
+                } elseif ($value === true && isset($true[$prop])) {
+                    $value = $true[$prop];
+                } elseif (in_array($value, [null, '', [], false], true)) {
+                    continue;
+                } elseif (is_array($value)) {
+                    if ($prop === 'font-family') {
+                        $value = "'".implode("','", $value)."'";
+                    } else {
+                        $value = implode(' ', $value);
+                    }
+                }
+
+                $style[] = "$prop: $value";
+            }
+            return implode('; ', $style);
         } else {
             return (string)$expr;
         }

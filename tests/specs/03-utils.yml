@@ -2,7 +2,7 @@ overview: HTML utilities
 tests:
   - name: css class
     template: >
-      <p Class="{this}">a</p>
+      <p class="{this}">a</p>
     expected: '<p class="a c">a</p>'
     tests:
       - name: with object
@@ -13,6 +13,26 @@ tests:
         data: 'a c'
       - name: nested data
         data: [{a: true, vv: {c: true}}]
+  - name: style attribute
+    template: >-
+      <p style="{this}">a</p>
+    tests:
+      - name: falsey
+        data: { display: false, visibility: false, border: false, box-shadow: false }
+        expected: >-
+          <p style="display: none; visibility: hidden; border: none; box-shadow: none">a</p>
+      - name: truthy
+        data: { visibility: true }
+        expected: >-
+          <p style="visibility: visible">a</p>
+      - name: array
+        data: { border: ['solid', '1px', '#f00'], 'font-family': ['Open Sans', 'Helvetica', 'sans-serif'] }
+        expected: >-
+          <p style="border: solid 1px #f00; font-family: 'Open Sans','Helvetica','sans-serif'">a</p>
+      - name: zero
+        data: { top: 0 }
+        expected: >-
+          <p style="top: 0">a</p>
   - name: comments
     template: |
       <!-- Do something. -->
