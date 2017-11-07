@@ -65,6 +65,11 @@ class Ebi {
         $this->defineFunction('formatDate', [$this, 'formatDate']);
         $this->defineFunction('formatNumber', 'number_format');
         $this->defineFunction('htmlEncode', 'htmlspecialchars');
+        $this->defineFunction('isArray', 'is_array');
+        $this->defineFunction('isBool', 'is_bool');
+        $this->defineFunction('isInt', 'is_int');
+        $this->defineFunction('isScalar', 'is_scalar');
+        $this->defineFunction('isString', 'is_string');
         $this->defineFunction('join');
         $this->defineFunction('lcase', $this->mb('strtolower'));
         $this->defineFunction('lcfirst');
