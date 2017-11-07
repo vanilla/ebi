@@ -64,6 +64,9 @@ abstract class AbstractTest extends TestCase {
     public function renderFixture($component, $data = []) {
         $ebi = new Ebi(new FilesystemLoader(__DIR__.'/fixtures'), __DIR__.'/cache/fixtures');
         $ebi->defineFunction('json_encode');
+        $ebi->defineFunction('concat', function (...$args) {
+            return implode('', $args);
+        });
 
         $rendered = $ebi->render($component, $data);
 
