@@ -776,6 +776,14 @@ class Compiler {
         return $blocksOut;
     }
 
+    /**
+     * Output the source of a node as a PHP comment.
+     *
+     * @param DOMElement $node The node to output.
+     * @param DOMAttr[] $attributes Regular attributes.
+     * @param DOMAttr[] $special Special attributes.
+     * @param CompilerBuffer $out The output buffer for the results.
+     */
     protected function compileTagComment(DOMElement $node, $attributes, $special, CompilerBuffer $out) {
         // Don't double up comments.
         if ($node->previousSibling && $node->previousSibling->nodeType === XML_COMMENT_NODE) {
@@ -785,7 +793,7 @@ class Compiler {
         $str = '<'.$node->tagName;
         foreach ($special as $attr) {
             /* @var DOMAttr $attr */
-            $str .= ' '.$attr->name.(empty($attr->value) ? '' : '="'.htmlspecialchars($attr->value).'"');
+            $str .= ' '.$attr->name.(empty($attr->value) ? '' : '="'.str_replace('"', '&quot;', $attr->value).'"');
         }
         $str .= '>';
         $comments = explode("\n", $str);
@@ -810,8 +818,21 @@ class Compiler {
 
         if (!empty($tagNameExpr)) {
             $tagNameExpr = $this->expr($tagNameExpr, $out, $special[self::T_TAG]);
+            $tagName = $node->tagName === 'x' ? "''" : var_export($node->tagName, true);
+
+            $tagVar = $out->depthName('$tag', 1);
+            if ($node->hasChildNodes() || $force) {
+                $out->setNodeProp($node, self::T_TAG, $tagVar);
+                $out->depth(+1);
+            }
+
+            $out->appendCode("\n");
+            $this->compileTagComment($node, $attributes, $special, $out);
+            $out->appendCode("$tagVar = \$this->tagName($tagNameExpr, $tagName);\n");
+            $out->appendCode("if ($tagVar) {\n");
+            $out->indent(+1);
             $out->echoLiteral('<');
-            $out->echoCode($tagNameExpr);
+            $out->echoCode($tagVar);
         } else {
             $out->echoLiteral('<'.$node->tagName);
         }
@@ -842,6 +863,11 @@ class Compiler {
         } else {
             $out->echoLiteral(" />");
         }
+
+        if (!empty($tagNameExpr)) {
+            $out->indent(-1);
+            $out->appendCode("}\n\n");
+        }
     }
 
     private function isExpression($value) {
@@ -853,12 +879,18 @@ class Compiler {
             return;
         }
 
-        $tagNameExpr = !empty($special[self::T_TAG]) ? $special[self::T_TAG]->value : '';
+        $tagNameExpr = $out->getNodeProp($node, self::T_TAG); //!empty($special[self::T_TAG]) ? $special[self::T_TAG]->value : '';
         if (!empty($tagNameExpr)) {
-            $tagNameExpr = $this->expr($tagNameExpr, $out, $special[self::T_TAG]);
+            $out->appendCode("\n");
+            $out->appendCode("if ($tagNameExpr) {\n");
+            $out->indent(+1);
+
             $out->echoLiteral('</');
             $out->echoCode($tagNameExpr);
             $out->echoLiteral('>');
+            $out->indent(-1);
+            $out->appendCode("}\n");
+            $out->depth(-1);
         } elseif ($node->tagName !== self::T_X) {
             $out->echoLiteral("</{$node->tagName}>");
         }

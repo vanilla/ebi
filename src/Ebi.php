@@ -623,4 +623,18 @@ class Ebi {
             $children();
         }
     }
+
+    /**
+     * Massage a dynamic tag name.
+     *
+     * @param mixed $expr The result of the tag name expression.
+     * @param string $tag The default tag name if **$expr** is true.
+     * @return string Returns the expected tag name.
+     */
+    protected function tagName($expr, $tag) {
+        if ($expr === true) {
+            return $tag;
+        }
+        return $expr;
+    }
 }

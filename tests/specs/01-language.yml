@@ -96,3 +96,23 @@ tests:
         expected: '1>2>3'
       - name: x-as
         template: '<script x-as="foo">[1, 2, 3]</script>{join(">", foo)}'
+  - name: x-tag
+    template: >-
+      <div class="outer" x-tag="outer"><div class="inner" x-tag="inner">foo</div></div>
+    tests:
+      - name: outer
+        data: { outer: true }
+        expected: >-
+          <div class="outer">foo</div>
+      - name: inner
+        data: { inner: true }
+        expected: >-
+          <div class="inner">foo</div>
+      - name: both
+        data: { outer: true, inner: true }
+        expected: >-
+          <div class="outer"><div class="inner">foo</div></div>
+      - name: rename tag
+        data: { outer: "p" }
+        expected: >-
+          <p class="outer">foo</p>

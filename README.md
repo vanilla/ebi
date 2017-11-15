@@ -338,6 +338,18 @@ echo '<h'.$props['level'].'>',
     '</h'.$props['level'].'>';
 ```
 
+#### Conditional wrappers with x-tag
+
+If your template uses has an **x-tag** expression that results in an empty string then the tag will not render, *but the tag contents will*. In this way you can use **x-tag** do implement conditional wraps.
+
+If an **x-tag** expression evaluates to **true** then the tag that it is in will be used.
+
+```html
+<p x-tag="true">Hello!</p>
+```
+
+The above example will just render `<p>Hello!</p>`. This notation is useful when you have a boolean expression that determines when to render a wrapper.
+
 ## Template Tags
 
 Most of Ebi's functionality uses special attributes. However, there are a couple of special tags supported.
