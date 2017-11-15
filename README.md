@@ -572,6 +572,35 @@ When passing an object as the class attribute the keys define the class names an
 
 Note the double braces in the above example. The first brace tells us we are using variable interpolation and the second brace wraps the object in JSON notation.
 
+### Style attributes
+
+When you assign the style attribute with data you can pass it an associative array or object expression. When you do so the keys and values will be treated as CSS properties and values respectively.
+
+```html
+<p style="{{'font-family': ['Open Sans', 'Helvetica', 'sans-serif'], 'font-size': '16px'}}">Hello</p>
+```
+
+The style object will be converted into a string.
+
+```html
+<p style="font-family: 'Open Sans','Helvetica','sans-serif'; font-size: 16px">Hello</p>
+```
+
+Notice how the font-family was given an array and correctly converted to CSS.
+
+#### Boolean style values
+
+There are a few CSS properties that can accept a true or false value:
+
+| Property  | Value | Result |
+| --------- | ----- | ------ |
+| border    | false | border: none
+| box-shadow | false | box-shadow: none
+| display   | false | display: none
+| visibility | true | visibility: visible
+| visibility | false | visibility: hidden
+
+ 
 ### Whitespace
 
 Whitespace around block level elements is trimmed by default resulting in more compact output of your HTML.
