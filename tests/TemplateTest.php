@@ -228,10 +228,7 @@ EOT;
         $r = $this->renderFixture('repro01', ['data' => [1, 2]]);
 
         $expected = <<<EOT
-{"name":"a","data":[1,2]}
-{"name":"b","data":null}
-
-{"name":"c","data":1}
+{"name":"a","data":[1,2]}{"name":"b","data":null}{"name":"c","data":1}
 EOT;
 
         $this->assertEquals($expected, $r);
