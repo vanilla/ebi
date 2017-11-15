@@ -7,13 +7,14 @@
 
 namespace Ebi;
 
+use Symfony\Component\Cache\Adapter\NullAdapter;
 use Symfony\Component\ExpressionLanguage\Node\ConstantNode;
 use Symfony\Component\ExpressionLanguage\Node\GetAttrNode;
 use Symfony\Component\ExpressionLanguage\Node\NameNode;
 
 class ExpressionLanguage extends \Symfony\Component\ExpressionLanguage\ExpressionLanguage {
     public function __construct() {
-        parent::__construct();
+        parent::__construct(new NullAdapter());
 
         $this->registerNodeFunction(GetAttrNode::class, function (\Symfony\Component\ExpressionLanguage\Compiler $compiler, GetAttrNode $node) {
                 switch ($node->attributes['type']) {

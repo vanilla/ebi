@@ -222,6 +222,19 @@ EOT;
     }
 
     /**
+     * Test a bug from production that resulted from odd caching behavior.
+     */
+    public function testRepro01() {
+        $r = $this->renderFixture('repro01', ['data' => [1, 2]]);
+
+        $expected = <<<EOT
+{"name":"a","data":[1,2]}{"name":"b","data":null}{"name":"c","data":1}
+EOT;
+
+        $this->assertEquals($expected, $r);
+    }
+
+    /**
      *
      */
 //    public function testVerbTense() {
