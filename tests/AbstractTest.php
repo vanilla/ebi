@@ -68,6 +68,15 @@ abstract class AbstractTest extends TestCase {
         $ebi->defineFunction('concat', function (...$args) {
             return implode('', $args);
         });
+        $ebi->defineFunction('ident', function (...$args) {
+            if (count($args) === 1) {
+                return $args[0];
+            } elseif (empty($args)) {
+                return null;
+            } else {
+                return $args;
+            }
+        });
 
         $rendered = $ebi->render($component, $data);
 
